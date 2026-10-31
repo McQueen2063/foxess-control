@@ -3,13 +3,14 @@ FROM foxess-control-ci:test
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        podman netavark aardvark-dns iptables git \
+        podman netavark aardvark-dns iptables nftables git \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /etc/containers \
     && printf '[storage]\ndriver = "vfs"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n' \
         > /etc/containers/storage.conf \
     && printf '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\n' \
-        > /etc/containers/containers.conf
+        > /etc/containers/containers.conf \
+    && command -v nft
 
 # Nested Podman uses this disposable container's storage/network, never the
 # runner's Docker socket. The outer container requires --privileged.
