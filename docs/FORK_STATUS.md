@@ -47,7 +47,8 @@ The imported GitHub release, add-on publishing, and tag-triggered flaky-test
 workflows are restricted to the original upstream repository. Mirroring fork
 tags must not publish anything automatically. A fork GitHub Release will be
 created separately, only after explicit approval of the tested commit/version.
-No fork release tag or manifest version is assigned by this change.
+The release-review change prepares manifest version `1.0.22`; no release
+tag is created automatically. See [release gates and migration](FORK_RELEASE.md).
 
 ## HA status smoke gate
 
