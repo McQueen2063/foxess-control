@@ -556,7 +556,9 @@ def ha_e2e(
             os.chmod(os.path.join(root, d), 0o777)
 
     sim_port = foxess_sim.url.rsplit(":", 1)[1] if foxess_sim else "0"
-    # stdout/stderr → DEVNULL to avoid pipe-buffer deadlock.
+    # stdout → DEVNULL to avoid pipe-buffer deadlock.
+    # Inherit stderr so pytest captures Podman startup errors even when no
+    # container exists yet (podman logs cannot diagnose those failures).
     # The default Linux pipe buffer is 64 KiB.  Under CI load (12 xdist
     # workers), HA's startup logs can fill the buffer before wait_ready()
     # succeeds, blocking the container process and preventing HA from
@@ -582,7 +584,7 @@ def ha_e2e(
             CONTAINER_IMAGE,
         ],
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=None,
     )
 
     try:
@@ -616,6 +618,20 @@ def ha_e2e(
             time.monotonic() - t0,
         )
     except BaseException:
+        # Collect diagnostics BEFORE stop/rm: readiness can fail before the
+        # later entity-wait diagnostic path is reached.
+        try:
+            logs = subprocess.run(
+                ["podman", "logs", "--tail", "200", name],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            print(f"HA startup: podman run exit={proc.poll()}")
+            print(logs.stdout[-12000:])
+            print(logs.stderr[-12000:])
+        except (subprocess.SubprocessError, OSError) as exc:
+            _log.warning("Failed to collect HA startup logs: %s", exc)
         _stop_container(name)
         _kill_process(proc)
         shutil.rmtree(tmpdir, ignore_errors=True)
