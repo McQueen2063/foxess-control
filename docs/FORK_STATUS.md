@@ -48,3 +48,20 @@ workflows are restricted to the original upstream repository. Mirroring fork
 tags must not publish anything automatically. A fork GitHub Release will be
 created separately, only after explicit approval of the tested commit/version.
 No fork release tag or manifest version is assigned by this change.
+
+## HA status smoke gate
+
+The `ha-status-smoke` Forgejo job builds `Dockerfile.e2e-ci` and runs one real-HA
+smoke test with the existing seeded config entry and local FoxESS simulator.
+Both the HA image and Python test dependency are pinned to 2026.2.3. It verifies
+the new sensors, successful timestamped reads, and unchanged legacy Work Mode
+and battery SoC entities. This is a focused load/status gate, not the full E2E
+or soak suite and not a live-device test.
+
+Nested Podman runs in a disposable **privileged** Docker container with its own
+VFS storage. This requires a trusted Docker-capable runner: privileged mode is
+not a security boundary against malicious code. Do not run untrusted external
+PRs on this runner. No host Docker socket, host network, production credentials,
+or production HA configuration is mounted. Existing fixtures stop the nested
+HA container, and `docker run --rm` removes the outer container after exit.
+Local OpenCode needs no container runtime or additional privileges.
