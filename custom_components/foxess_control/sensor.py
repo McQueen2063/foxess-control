@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util  # noqa: F401 — test patching tar
 from ._helpers import _dd
 from .const import CONF_DEVICE_SERIAL, CONF_WEB_USERNAME, DOMAIN
 from .coordinator import FoxESSDataCoordinator
+from .mode_status_sensor import FoxESSModeStatusSensor
 from .smart_battery.logging import SessionContextFilter
 from .smart_battery.sensor_base import (
     BatteryForecastSensor as _BatteryForecastSensor,
@@ -236,6 +237,10 @@ async def async_setup_entry(
         )
         entities.append(FoxESSWorkModeSensor(coordinator, entry))
         entities.append(FoxESSDataFreshnessSensor(coordinator, entry))
+        entities.extend(
+            FoxESSModeStatusSensor(coordinator, entry, key, _device_info(entry))
+            for key in ("base_work_mode", "scheduler_status", "mode_status_read")
+        )
 
     # Opt-in debug log capture
     result = setup_debug_log(hass, entry)

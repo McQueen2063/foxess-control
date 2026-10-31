@@ -1,0 +1,25 @@
+FROM python:3.13-slim-trixie
+
+WORKDIR /src
+COPY . .
+
+# Match the locally validated HA version instead of resolving ancient releases.
+RUN pip install --no-cache-dir -e '.[dev]' 'homeassistant==2026.2.3' \
+    && playwright install --with-deps chromium
+
+RUN ruff check \
+    custom_components/foxess_control/foxess/inverter.py \
+    custom_components/foxess_control/coordinator.py \
+    custom_components/foxess_control/sensor.py \
+    custom_components/foxess_control/mode_status_sensor.py \
+    tests/test_mode_status*.py tests/test_sensor.py \
+    && ruff format --check \
+    custom_components/foxess_control/mode_status_sensor.py \
+    tests/test_mode_status*.py \
+    && mypy --follow-imports=silent \
+    custom_components/foxess_control/coordinator.py \
+    custom_components/foxess_control/mode_status_sensor.py
+
+# Browser unit tests are included; HA-container E2E and soak tests are separate.
+RUN pytest tests/ --ignore=tests/e2e --ignore=tests/soak \
+    -m 'not slow and not soak' -n 2 --tb=short

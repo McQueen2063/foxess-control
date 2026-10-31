@@ -124,6 +124,41 @@ class Inverter:
 
     # --- Scheduler / Work Mode ---
 
+    def get_base_work_mode(self) -> str:
+        """Read the device setting, not the currently matching schedule group.
+
+        This is not an effective-mode calculation: an enabled scheduler can
+        override the base mode. Unknown replies must never default to SelfUse.
+        """
+        result: Any = self.client.post(
+            "/op/v0/device/setting/get", {"sn": self.sn, "key": "WorkMode"}
+        )
+        mode = result.get("value") if isinstance(result, dict) else None
+        if not isinstance(mode, str) or mode not in {
+            "SelfUse",
+            "Feedin",
+            "Backup",
+            "PeakShaving",
+        }:
+            raise ValueError("Invalid base work mode response")
+        return mode
+
+    def get_scheduler_flag(self) -> dict[str, bool]:
+        """Read the scheduler master switch without inferring it from groups."""
+        result: Any = self.client.post(
+            "/op/v1/device/scheduler/get/flag", {"deviceSN": self.sn}
+        )
+        if not isinstance(result, dict):
+            raise ValueError("Invalid scheduler flag response")
+        flags: dict[str, bool] = {}
+        for key in ("enable", "support"):
+            value = result.get(key)
+            # bool("0") is True; only explicit API booleans/0/1 are safe.
+            if type(value) not in (bool, int) or value not in (0, 1):
+                raise ValueError("Invalid scheduler flag response")
+            flags[key] = bool(value)
+        return flags
+
     def get_schedule(self) -> dict[str, Any]:
         """Get the current scheduler configuration.
 
