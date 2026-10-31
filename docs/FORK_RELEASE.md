@@ -27,6 +27,15 @@ cases intentionally skip the other mode. The broader UI E2E and multi-hour soak
 suite are not included. Collection is not execution; record actual CI results
 before checking off any gate.
 
+The first lifecycle run (#21) reported 28 passed, 27 skipped and 12 failures,
+all in entity mode. HA rejected existing select labels such as `Self Use`
+because the inherited Work Mode sensor declared only cloud enum values. The
+follow-up expands accepted options from the existing adapter label map, without
+normalizing returned states, changing entity IDs or altering control writes.
+Regression tests reproduce HA's enum validation failure for all five labels.
+This correction must pass the lifecycle gate again; it is not yet validated
+by a successful real-HA entity-mode run.
+
 The known H3 scheduler write/power-limit compatibility concern is **not fixed**
 here. It must be inspected before any later live control testing. Publishing
 this fork does not authorize battery writes or enabling battery-charger control.

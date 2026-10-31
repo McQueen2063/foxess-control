@@ -14,6 +14,9 @@ Fork release candidate, based on upstream v1.0.21. Not published yet.
   HA 2026.2.3 and a local FoxESS simulator; explicit Buildx builds.
 
 ### Compatibility and limitations
+- Fix an inherited entity-backend setup failure: Work Mode's enum options now
+  accept the existing select labels (e.g. `Self Use`) as well as cloud values
+  (`SelfUse`). Returned values, unique IDs and control behavior stay unchanged.
 - Existing domain, config-entry/session formats, services, and entity unique IDs
   are preserved. The legacy Work Mode sensor and all control paths are unchanged.
 - Base Work Mode is not an effective-mode calculation when scheduling is enabled.
