@@ -1,5 +1,10 @@
 FROM python:3.13-slim-trixie
 
+# HA pins lru-dict to a version without a CPython 3.13 wheel.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /src
 COPY . .
 
