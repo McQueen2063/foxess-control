@@ -20,6 +20,13 @@ Upstream base: v1.0.21 (`bd83aef`). Development lives in Forgejo
   compatibility on the target device. Live read verification is still pending.
 - [ ] Explicit approval of release commit, tag, and GitHub Release text.
 
+The lifecycle CI change selects the complete `tests/e2e/test_e2e.py` module
+(66 cloud/entity parameterized cases collected locally), plus the status smoke
+test, with two workers and a 120-minute job timeout. Some cloud-only/entity-only
+cases intentionally skip the other mode. The broader UI E2E and multi-hour soak
+suite are not included. Collection is not execution; record actual CI results
+before checking off any gate.
+
 The known H3 scheduler write/power-limit compatibility concern is **not fixed**
 here. It must be inspected before any later live control testing. Publishing
 this fork does not authorize battery writes or enabling battery-charger control.
