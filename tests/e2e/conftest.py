@@ -280,11 +280,17 @@ def _build_container_once() -> None:
 
     lock = filelock.FileLock(str(REPO_ROOT / ".e2e-build.lock"), timeout=300)
     with lock:
-        subprocess.run(
+        result = subprocess.run(
             ["podman", "build", "-t", CONTAINER_IMAGE, str(E2E_DIR)],
-            check=True,
             capture_output=True,
+            text=True,
+            timeout=600,
         )
+        if result.returncode:
+            raise RuntimeError(
+                f"HA image build failed (exit {result.returncode}):\n"
+                f"{result.stdout[-12000:]}\n{result.stderr[-12000:]}"
+            )
 
 
 def _worker_id() -> str:
