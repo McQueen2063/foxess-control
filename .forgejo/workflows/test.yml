@@ -16,7 +16,9 @@ jobs:
       - name: Check Docker-backed Buildx builder
         run: |
           docker buildx version
-          test "$(docker buildx inspect default --format '{{.Driver}}')" = docker
+          info="$(docker buildx inspect default)"
+          printf '%s\n' "$info"
+          printf '%s\n' "$info" | grep -Eq '^Driver:[[:space:]]+docker[[:space:]]*$'
       - name: Lint, type-check and run unit/browser tests
         run: docker buildx build --builder default --load --progress=plain --file Dockerfile.ci --tag foxess-control-ci:test .
 
@@ -30,7 +32,9 @@ jobs:
       - name: Check Docker-backed Buildx builder
         run: |
           docker buildx version
-          test "$(docker buildx inspect default --format '{{.Driver}}')" = docker
+          info="$(docker buildx inspect default)"
+          printf '%s\n' "$info"
+          printf '%s\n' "$info" | grep -Eq '^Driver:[[:space:]]+docker[[:space:]]*$'
       - name: Build validated test environment
         run: docker buildx build --builder default --load --progress=plain --file Dockerfile.ci --tag foxess-control-ci:test .
       - name: Build isolated nested-Podman environment
