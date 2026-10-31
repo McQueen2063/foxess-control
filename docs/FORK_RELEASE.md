@@ -13,9 +13,11 @@ Upstream base: v1.0.21 (`bd83aef`). Development lives in Forgejo
   CI before this release-review change. Exact release commit must pass again.
 - [x] Buildx migration reviewed and merged separately.
 - [ ] CI green on the exact release commit, including manifest/version checks.
-- [ ] Full existing HA-container control-lifecycle E2E suite and soak checks,
-  or an explicitly reviewed change to this release gate. The one-test status
-  smoke is not a substitute; no successful live-device test is claimed.
+- [x] Existing HA-container control-lifecycle module and status smoke:
+  [run #22](https://git.kernel32.de/utt/foxess-control/actions/runs/22), commit
+  `4c11156`, 40 passed and 27 intentional backend-specific skips.
+- [x] User approved deferring the multi-hour soak suite for this read-only status
+  release on 2026-10-31. Soak tests have NOT passed or run as part of this gate.
 - [ ] Review sequential cloud-read assumptions, freshness contract, and API
   compatibility on the target device. Live read verification is still pending.
 - [ ] Explicit approval of release commit, tag, and GitHub Release text.
@@ -33,12 +35,31 @@ because the inherited Work Mode sensor declared only cloud enum values. The
 follow-up expands accepted options from the existing adapter label map, without
 normalizing returned states, changing entity IDs or altering control writes.
 Regression tests reproduce HA's enum validation failure for all five labels.
-This correction must pass the lifecycle gate again; it is not yet validated
-by a successful real-HA entity-mode run.
+The correction passed run #22 in both cloud and entity modes. This is simulator
+validation, not validation on a physical inverter. The merge commit `b6271c0`
+has its own post-merge run #23; record its result separately.
 
 The known H3 scheduler write/power-limit compatibility concern is **not fixed**
 here. It must be inspected before any later live control testing. Publishing
 this fork does not authorize battery writes or enabling battery-charger control.
+
+## Approved scope: read-only status release
+
+This release is intended to install and verify the new read-only status sensors,
+not to commission charging/discharging. Deferring soak tests does not remove
+their value or imply successful long-duration validation. Broader UI E2E and
+multi-hour soak coverage remain unverified; existing controls are still present
+in the integration, not technically disabled by this release.
+
+Parents must remain `observe_only: true`, `exclusive_control: false`. Do not
+invoke control services, run live control tests, or enable automations that can
+write to the inverter as part of migration. Before any later live-control work,
+separately review the H3 power-limit concern, active-session/recovery behavior,
+adapter changes, and required additional test coverage, then obtain explicit
+approval. Target-device read-only API compatibility will be checked during the
+controlled installation/verification; no pre-install live compatibility success
+is claimed. Release publication and HA installation still require separate
+explicit approval and a verified backup before installation.
 
 ## Publication (only after approval)
 
