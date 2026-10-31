@@ -1,6 +1,9 @@
 # Built first by the workflow; includes the tested source and Python tooling.
 FROM foxess-control-ci:test
 
+# Outer Docker owns resource limits; inner Podman has no delegated cgroups.
+ENV FOXESS_E2E_DISABLE_CGROUPS=1
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         podman netavark aardvark-dns iptables nftables git \

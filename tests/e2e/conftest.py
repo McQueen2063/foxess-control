@@ -568,6 +568,11 @@ def ha_e2e(
         [
             "podman",
             "run",
+            *(
+                ["--cgroups=disabled"]
+                if os.environ.get("FOXESS_E2E_DISABLE_CGROUPS") == "1"
+                else []
+            ),
             "--rm",
             "--name",
             name,

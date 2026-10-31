@@ -65,3 +65,16 @@ PRs on this runner. No host Docker socket, host network, production credentials,
 or production HA configuration is mounted. Existing fixtures stop the nested
 HA container, and `docker run --rm` removes the outer container after exit.
 Local OpenCode needs no container runtime or additional privileges.
+
+The nested CI image sets `FOXESS_E2E_DISABLE_CGROUPS=1`: inner HA containers
+use `podman run --cgroups=disabled` because Docker has not delegated cgroup
+controllers. The outer Docker container still owns resource accounting/limits.
+Normal E2E runs outside that image retain Podman's default cgroup management.
+
+### Follow-up: explicit Buildx builds
+
+After the HA status smoke pipeline has a successful run, migrate its Docker
+build commands to explicit Buildx (`docker buildx build --load`) in a separate
+reviewed change. Keep the current builder during startup diagnosis to avoid
+changing two variables at once. Revisit earlier only if a builder-related
+failure blocks progress, and explain that decision before changing it.
