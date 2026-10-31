@@ -13,8 +13,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Check Docker-backed Buildx builder
+        run: |
+          docker buildx version
+          test "$(docker buildx inspect default --format '{{.Driver}}')" = docker
       - name: Lint, type-check and run unit/browser tests
-        run: docker build --file Dockerfile.ci --tag foxess-control-ci:test .
+        run: docker buildx build --builder default --load --progress=plain --file Dockerfile.ci --tag foxess-control-ci:test .
 
   ha-status-smoke:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -23,10 +27,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Check Docker-backed Buildx builder
+        run: |
+          docker buildx version
+          test "$(docker buildx inspect default --format '{{.Driver}}')" = docker
       - name: Build validated test environment
-        run: docker build --file Dockerfile.ci --tag foxess-control-ci:test .
+        run: docker buildx build --builder default --load --progress=plain --file Dockerfile.ci --tag foxess-control-ci:test .
       - name: Build isolated nested-Podman environment
-        run: docker build --file Dockerfile.e2e-ci --tag foxess-control-e2e:test .
+        run: docker buildx build --builder default --load --progress=plain --file Dockerfile.e2e-ci --tag foxess-control-e2e:test .
       - name: Load integration in HA against simulator
         # No host socket, host network, secrets or production config mounts.
         run: docker run --rm --privileged --shm-size=512m foxess-control-e2e:test
