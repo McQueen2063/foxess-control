@@ -17,7 +17,7 @@ RUN ruff check \
     custom_components/foxess_control/coordinator.py \
     custom_components/foxess_control/sensor.py \
     custom_components/foxess_control/mode_status_sensor.py \
-    tests/test_mode_status*.py tests/test_sensor.py \
+    tests/test_mode_status*.py tests/test_sensor.py tests/test_entity_work_mode_sensor.py \
     simulator/server.py tests/e2e/test_mode_status.py \
     && ruff format --check \
     custom_components/foxess_control/mode_status_sensor.py \

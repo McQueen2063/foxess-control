@@ -25,7 +25,7 @@ jobs:
   ha-status-smoke:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,6 +39,11 @@ jobs:
         run: docker buildx build --builder default --load --progress=plain --file Dockerfile.ci --tag foxess-control-ci:test .
       - name: Build isolated nested-Podman environment
         run: docker buildx build --builder default --load --progress=plain --file Dockerfile.e2e-ci --tag foxess-control-e2e:test .
-      - name: Load integration in HA against simulator
+      - name: HA status and control-lifecycle regression tests
         # No host socket, host network, secrets or production config mounts.
-        run: docker run --rm --privileged --shm-size=512m foxess-control-e2e:test
+        # Full test_e2e.py module: cloud and entity modes, two workers maximum.
+        # Multi-hour soak scenarios and the UI suite are not included here.
+        run: >-
+          docker run --rm --privileged --shm-size=512m foxess-control-e2e:test
+          pytest tests/e2e/test_mode_status.py tests/e2e/test_e2e.py
+          -m slow -n 2 -p no:randomly --tb=long -v --durations=15

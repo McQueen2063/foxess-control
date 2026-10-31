@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util  # noqa: F401 — test patching tar
 from ._helpers import _dd
 from .const import CONF_DEVICE_SERIAL, CONF_WEB_USERNAME, DOMAIN
 from .coordinator import FoxESSDataCoordinator
+from .foxess_adapter import _ENTITY_MODE_MAP
 from .mode_status_sensor import FoxESSModeStatusSensor
 from .smart_battery.logging import SessionContextFilter
 from .smart_battery.sensor_base import (
@@ -728,7 +729,11 @@ class FoxESSWorkModeSensor(CoordinatorEntity[FoxESSDataCoordinator], SensorEntit
     # enum keeps a single source of truth — adding a new WorkMode value
     # automatically propagates here.
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = [m.value for m in WorkMode]
+    # The entity backend intentionally preserves the source select's labels.
+    # HA validates enum states during setup, so include both representations.
+    _attr_options = list(
+        dict.fromkeys([m.value for m in WorkMode] + list(_ENTITY_MODE_MAP.values()))
+    )
 
     def __init__(
         self,

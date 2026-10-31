@@ -14,6 +14,7 @@ from custom_components.foxess_control.domain_data import (
     FoxESSControlData,
     FoxESSEntryData,
 )
+from custom_components.foxess_control.foxess_adapter import _ENTITY_MODE_MAP
 from custom_components.foxess_control.sensor import (
     POLLED_SENSOR_DESCRIPTIONS,
     BatteryForecastSensor,
@@ -2870,7 +2871,9 @@ class TestWorkModeSensorOptionsCoverage:
             "FoxESSWorkModeSensor must declare _attr_options so HA's "
             "automation editor knows the valid set of work-mode states."
         )
-        assert set(sensor._attr_options) == {m.value for m in WorkMode}, (
+        assert set(sensor._attr_options) == (
+            {m.value for m in WorkMode} | set(_ENTITY_MODE_MAP.values())
+        ), (
             f"_attr_options={sensor._attr_options!r} must equal "
             f"the WorkMode enum values {[m.value for m in WorkMode]!r}."
         )
@@ -2885,7 +2888,7 @@ class TestWorkModeSensorOptionsCoverage:
         coordinator = MagicMock()
         coordinator.data = None
         sensor = FoxESSWorkModeSensor(coordinator, _make_entry())
-        expected = {m.value for m in WorkMode}
+        expected = {m.value for m in WorkMode} | set(_ENTITY_MODE_MAP.values())
         assert set(sensor._attr_options or ()) == expected
 
     @pytest.mark.parametrize(
