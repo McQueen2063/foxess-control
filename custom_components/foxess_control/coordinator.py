@@ -244,6 +244,44 @@ class FoxESSDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.debug("Failed to fetch work mode, skipping", exc_info=True)
             data["_work_mode"] = None
 
+        status: dict[str, Any] = {}
+        previous = (self.data or {}).get("_mode_status", {})
+        for key, read in (
+            ("base", self.inverter.get_base_work_mode),
+            ("scheduler", self.inverter.get_scheduler_flag),
+        ):
+            result: dict[str, Any] = {
+                "success": False,
+                "value": None,
+                "last_attempt": dt_util.utcnow().isoformat(),
+                "last_success": previous.get(key, {}).get("last_success"),
+                "error": None,
+            }
+            try:
+                result["value"] = read()
+                result["success"] = True
+                result["last_success"] = dt_util.utcnow().isoformat()
+            except Exception as err:
+                # Do not expose API payloads/credentials in entity attributes.
+                result["error"] = type(err).__name__
+                _LOGGER.debug("Failed to read mode status: %s", key, exc_info=True)
+            status[key] = result
+        data["_mode_status"] = status
+        return data
+
+    def _data_after_failed_poll(self) -> dict[str, Any]:
+        """Keep telemetry, but never present old control status as a new read."""
+        data = dict(self.data or {})
+        if "_mode_status" in data:
+            data["_mode_status"] = {
+                key: {
+                    **read,
+                    "success": False,
+                    "value": None,
+                    "error": "TelemetryPollFailed",
+                }
+                for key, read in data["_mode_status"].items()
+            }
         return data
 
     async def _retry_pending_cleanup(self) -> None:
@@ -441,7 +479,7 @@ class FoxESSDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # does not flap.  Record at info so the diagnostics download
                 # shows the gap without alarming on a routine blip (C-026).
                 self._record_rest_poll_error(err, severity="info")
-                return dict(self.data)
+                return self._data_after_failed_poll()
             raise UpdateFailed(f"Error fetching FoxESS data: {err}") from err
         except Exception as err:
             if self.data is not None:
@@ -449,7 +487,7 @@ class FoxESSDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # keep serving it.  Record at warning — this path is not the
                 # routine API blip and may indicate a real defect (C-026).
                 self._record_rest_poll_error(err, severity="warning")
-                return dict(self.data)
+                return self._data_after_failed_poll()
             raise UpdateFailed(f"Error fetching FoxESS data: {err}") from err
 
         # Retry pending override cleanup from a previous failed session abort.
