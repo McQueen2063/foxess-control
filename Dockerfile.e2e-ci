@@ -1,0 +1,20 @@
+# Built first by the workflow; includes the tested source and Python tooling.
+FROM foxess-control-ci:test
+
+# Outer Docker owns resource limits; inner Podman has no delegated cgroups.
+ENV FOXESS_E2E_DISABLE_CGROUPS=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        podman netavark aardvark-dns iptables nftables git \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /etc/containers \
+    && printf '[storage]\ndriver = "vfs"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n' \
+        > /etc/containers/storage.conf \
+    && printf '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\n' \
+        > /etc/containers/containers.conf \
+    && command -v nft
+
+# Nested Podman uses this disposable container's storage/network, never the
+# runner's Docker socket. The outer container requires --privileged.
+CMD ["pytest", "tests/e2e/test_mode_status.py", "-m", "slow", "-n", "0", "-p", "no:randomly", "--tb=long", "-v"]
