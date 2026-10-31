@@ -21,8 +21,11 @@ Fork release candidate, based on upstream v1.0.21. Not published yet.
   are preserved. The legacy Work Mode sensor and all control paths are unchanged.
 - Base Work Mode is not an effective-mode calculation when scheduling is enabled.
   Cloud reads are sequential, not an atomic or instantaneous inverter snapshot.
-- Full control-lifecycle E2E/soak and live-device validation are not established
-  by the status smoke test. No H3 scheduler power-limit fixes are included.
+- The HA-container control-lifecycle module plus status smoke passed against
+  simulated cloud/entity backends (run #22: 40 passed, 27 backend-specific skips).
+  Multi-hour soak testing is explicitly deferred for this read-only status
+  release; broader UI E2E and live-device validation remain unverified.
+  No H3 scheduler power-limit fixes are included. Live controls stay blocked.
 - Migration requires a backup and no active smart operation. See
   [fork release checklist](docs/FORK_RELEASE.md). Publication remains gated on
   the outstanding checks and explicit approval; no live controls are approved.

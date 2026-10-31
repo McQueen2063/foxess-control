@@ -69,8 +69,11 @@ Local OpenCode needs no container runtime or additional privileges.
 
 The subsequent lifecycle-gate change extends this same job to run the complete
 `test_e2e.py` control-lifecycle module alongside the status smoke, using two
-workers and a 120-minute timeout. That extension must pass CI before claiming
-lifecycle coverage. UI E2E and multi-hour soak scenarios remain separate.
+workers and a 120-minute timeout. That extension passed run #22 (40 passed,
+27 backend-specific skips). UI E2E remains unverified; the user explicitly
+approved deferring multi-hour soak testing for this read-only status release.
+This does not approve live controls. See the release checklist for the exact
+scope and remaining gates.
 
 The nested CI image sets `FOXESS_E2E_DISABLE_CGROUPS=1`: inner HA containers
 use `podman run --cgroups=disabled` because Docker has not delegated cgroup
