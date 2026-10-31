@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.0.22
+
+Fork release candidate, based on upstream v1.0.21. Not published yet.
+
+### Added
+- Independent read-only Base Work Mode, Scheduler Status, and Mode Status Read
+  sensors. Explicit read-success, last-attempt and last-success timestamps keep
+  disabled/empty schedules distinguishable from failed or stale cloud reads.
+- Strict parsing of device WorkMode and scheduler master-switch responses;
+  unknown replies never default to SelfUse or scheduler disabled.
+- Forgejo unit/browser validation and a real-HA load/status smoke gate using
+  HA 2026.2.3 and a local FoxESS simulator; explicit Buildx builds.
+
+### Compatibility and limitations
+- Existing domain, config-entry/session formats, services, and entity unique IDs
+  are preserved. The legacy Work Mode sensor and all control paths are unchanged.
+- Base Work Mode is not an effective-mode calculation when scheduling is enabled.
+  Cloud reads are sequential, not an atomic or instantaneous inverter snapshot.
+- Full control-lifecycle E2E/soak and live-device validation are not established
+  by the status smoke test. No H3 scheduler power-limit fixes are included.
+- Migration requires a backup and no active smart operation. See
+  [fork release checklist](docs/FORK_RELEASE.md). Publication remains gated on
+  the outstanding checks and explicit approval; no live controls are approved.
+
 ## 1.0.21
 
 Consolidates the 1.0.21-beta.1 … beta.4 pre-releases. Headline: a series of

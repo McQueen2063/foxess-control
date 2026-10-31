@@ -1,5 +1,11 @@
 # FoxESS Control
 
+> **Maintained fork of [nicois/foxess-control](https://github.com/nicois/foxess-control),
+> based on upstream v1.0.21.** Adds read-only base-mode/scheduler status without
+> changing existing controls. Fork v1.0.22 is under release review, not published
+> yet. See [status semantics](docs/FORK_STATUS.md) and
+> [release gates, migration and rollback](docs/FORK_RELEASE.md).
+
 A Home Assistant custom integration for monitoring and controlling FoxESS inverter battery modes.
 
 FoxESS Control polls real-time inverter data (battery SoC, charge/discharge power, solar generation, house load, temperature) and provides actions for force charge, force discharge, smart charge/discharge with SoC targets, and feed-in management. It supports two backends: the **FoxESS Cloud API** and **local entity mode** via [foxess_modbus](https://github.com/nathanmarlor/foxess_modbus). It includes comprehensive polled sensors and can fully replace the [foxess-ha](https://github.com/macxq/foxess-ha) integration — see [Migrating from foxess-ha](#migrating-from-foxess-ha).
