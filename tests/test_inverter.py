@@ -48,6 +48,34 @@ def test_self_use(foxess_sim: SimulatorHandle) -> None:
     assert state["work_mode"] == "SelfUse"
 
 
+def test_charge_stop_second_charge_restores_idle(foxess_sim: SimulatorHandle) -> None:
+    """Reuse the existing HTTP simulator; no new power/physics model."""
+    from custom_components.foxess_control.foxess_adapter import (
+        _merge_with_existing,
+        _remove_mode_from_schedule,
+    )
+    from custom_components.foxess_control.smart_battery.types import WorkMode
+
+    inv = _make_inv(foxess_sim)
+    for _ in range(2):
+        group = {
+            "enable": 1,
+            "startHour": 0,
+            "startMinute": 0,
+            "endHour": 23,
+            "endMinute": 59,
+            "workMode": "ForceCharge",
+            "minSocOnGrid": 20,
+            "fdSoc": 100,
+            "fdPwr": 2000,
+        }
+        inv.set_schedule(_merge_with_existing(inv, group, WorkMode.FORCE_CHARGE))
+        assert inv.get_scheduler_flag()["enable"] is True
+        _remove_mode_from_schedule(inv, WorkMode.FORCE_CHARGE, 20, 4000)
+        assert inv.get_scheduler_flag()["enable"] is False
+        assert inv.get_current_mode() == WorkMode.SELF_USE
+
+
 def test_force_charge(foxess_sim: SimulatorHandle) -> None:
     inv = _make_inv(foxess_sim)
     inv.force_charge(target_soc=80)
