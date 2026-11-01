@@ -90,7 +90,10 @@ class HAClient:
         flow_id = flow["flow_id"]
         submit_data: dict[str, Any] = {}
         for field in flow.get("data_schema", []):
-            submit_data[field["name"]] = field.get("default")
+            # Optional fields without defaults must be omitted, not submitted
+            # as null (e.g. the optional integer charge-power ceiling).
+            if "default" in field:
+                submit_data[field["name"]] = field["default"]
         submit_data.update(overrides)
 
         r = self._session.post(
