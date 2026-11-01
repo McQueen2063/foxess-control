@@ -45,6 +45,7 @@ class Inverter:
         self.sn = serial_number
         self._max_power_w: int | None = None
         self._device_type: str | None = None
+        self.last_schedule_attempt: dict[str, Any] | None = None
 
     @property
     def max_power_w(self) -> int:
@@ -174,6 +175,45 @@ class Inverter:
         sched: dict[str, Any] = result
         return sched
 
+    def get_scheduler_capabilities(self) -> dict[str, Any]:
+        """Read declared scheduler constraints, without probing write endpoints."""
+        result = self.client.post("/op/v3/device/scheduler/get", {"deviceSN": self.sn})
+        if not isinstance(result, dict) or not isinstance(
+            result.get("properties"), dict
+        ):
+            raise ValueError("Missing scheduler capability properties")
+        if not result["properties"]:
+            raise ValueError("Empty scheduler capability properties")
+        # Do not include device identity or installed schedule groups.
+        return {
+            "endpoint": "/op/v3/device/scheduler/get",
+            "properties": result["properties"],
+        }
+
+    def disable_scheduler_for_self_use(self) -> None:
+        """Disable the master directly, only over a verified SelfUse base.
+
+        Do not write a replacement schedule: even a rejected schedule write can
+        enable the master on H3 hardware. Confirm the result with an independent
+        flag read; an HTTP/API success is not sufficient evidence of cleanup.
+        """
+        if self.get_base_work_mode() != WorkMode.SELF_USE.value:
+            raise ValueError("Cannot disable scheduler over a non-SelfUse base")
+        flag = self.get_scheduler_flag()
+        if not flag["support"]:
+            raise ValueError("Scheduler is not supported")
+        if not flag["enable"]:
+            return
+        self.client.post(
+            "/op/v1/device/scheduler/set/flag",
+            {"deviceSN": self.sn, "enable": 0},
+        )
+        flag = self.get_scheduler_flag()
+        if not flag["support"] or flag["enable"]:
+            raise RuntimeError(
+                "Scheduler disable could not be verified; manual recovery required"
+            )
+
     def _post_schedule(self, groups: list[ScheduleGroup], call_site: str) -> None:
         """POST groups to ``/scheduler/enable`` and emit a SCHEDULE_WRITE event.
 
@@ -185,10 +225,55 @@ class Inverter:
         API plus whatever the API returned.  The POST runs first so a
         failing write does not produce a misleading event.
         """
-        response = self.client.post(
-            _SCHEDULE_ENDPOINT,
-            {"deviceSN": self.sn, "groups": groups},
+        charge_only = any(
+            g.get("workMode") == WorkMode.FORCE_CHARGE.value for g in groups
+        ) and all(
+            g.get("workMode") in (WorkMode.SELF_USE.value, WorkMode.FORCE_CHARGE.value)
+            for g in groups
         )
+        restore_idle = False
+        if charge_only:
+            flag = self.get_scheduler_flag()
+            if not flag["support"]:
+                raise ValueError("Scheduler is not supported")
+            if not flag["enable"]:
+                if self.get_base_work_mode() != WorkMode.SELF_USE.value:
+                    raise ValueError("Cannot start charge from a non-SelfUse base")
+                restore_idle = True
+        self.last_schedule_attempt = {
+            "endpoint": _SCHEDULE_ENDPOINT,
+            "call_site": call_site,
+            "groups": [dict(g) for g in groups],
+            "status": "pending",
+            "rollback": "not_needed",
+        }
+        try:
+            response = self.client.post(
+                _SCHEDULE_ENDPOINT,
+                {"deviceSN": self.sn, "groups": groups},
+            )
+        except Exception as exc:
+            self.last_schedule_attempt.update(
+                status="failed",
+                error=type(exc).__name__,
+                errno=getattr(exc, "errno", None),
+            )
+            if restore_idle:
+                try:
+                    self.disable_scheduler_for_self_use()
+                except Exception as rollback_exc:
+                    self.last_schedule_attempt["rollback"] = "failed"
+                    _LOGGER.error(
+                        "Failed charge write: idle rollback failed; "
+                        "manual scheduler recovery required"
+                    )
+                    raise RuntimeError(
+                        "Charge schedule failed and idle rollback failed; "
+                        "manual recovery required"
+                    ) from rollback_exc
+                self.last_schedule_attempt["rollback"] = "disabled_verified"
+            raise
+        self.last_schedule_attempt["status"] = "success"
         # Copy the groups list defensively so downstream payload
         # consumers cannot mutate the caller's data through the event.
         emit_event(
@@ -254,24 +339,12 @@ class Inverter:
     # --- Convenience methods ---
 
     def finish_charge(self, min_soc_on_grid: int, power_w: int) -> None:
-        """Remove a charge-only schedule and return to a verified SelfUse base.
+        """Stop charge-only scheduling without rewriting groups or reserve/power.
 
-        Write SelfUse first so a failed flag read/write cannot leave ForceCharge
-        running. Keep that harmless baseline for legacy schedule-mode readers.
-        Never disable the master switch over an unknown/conflicting base mode.
+        Arguments are retained for existing adapter call sites. The stored charge
+        groups remain disabled; a later charge merge replaces same-mode groups.
         """
-        self.set_work_mode(
-            WorkMode.SELF_USE,
-            min_soc_on_grid=min_soc_on_grid,
-            fd_soc=max(11, min_soc_on_grid),
-            fd_pwr=power_w,
-        )
-        if self.get_base_work_mode() != WorkMode.SELF_USE.value:
-            raise ValueError("Cannot restore idle scheduler over a non-SelfUse base")
-        self.client.post(
-            "/op/v1/device/scheduler/set/flag",
-            {"deviceSN": self.sn, "enable": 0},
-        )
+        self.disable_scheduler_for_self_use()
 
     def self_use(self, min_soc_on_grid: int = 11, api_min_soc: int = 11) -> None:
         """Switch to self-use mode (default operating mode)."""
@@ -328,6 +401,9 @@ class Inverter:
         are enabled.
         """
         schedule = self.get_schedule()
+        master = schedule.get("enable")
+        if type(master) in (bool, int) and master == 0:
+            return None  # Stored groups are not active with the master disabled.
         groups: list[dict[str, Any]] = schedule.get("groups", [])
         enabled = [g for g in groups if g.get("enable") == 1]
         if not enabled:

@@ -1,8 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- Correct charge-only cleanup to disable and verify the scheduler master directly,
+  without first sending a potentially rejected SelfUse schedule. Stored groups
+  remain disabled; the legacy mode reader no longer treats them as active.
+- Guard charge-only writes from verified idle with rollback after a failed write
+  that may nevertheless have enabled the scheduler. Record the attempt/outcome.
+- Add explicit read-only scheduler capability diagnostics, including for paused
+  entries. Unknown limits are not guessed and no alternate write payload is tried.
+- See [live failure evidence and remaining gates](docs/CHARGE_WRITE_FAILURE.md).
+  These changes are not installed and do not establish H3 write compatibility.
+
 ## 1.0.23
 
-Release candidate; not published yet. Based on fork v1.0.22 (upstream v1.0.21).
+Published. Based on fork v1.0.22 (upstream v1.0.21). Subsequent H3 live testing
+rejected start and cleanup with 40257 and left scheduling enabled until manual
+recovery. See the unreleased correction above; simulation success is not live
+control validation.
 
 ### Added
 - Optional **Maximum charge power (W)** integration option (`max_charge_power_w`)

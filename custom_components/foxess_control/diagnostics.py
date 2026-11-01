@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
     from .domain_data import FoxESSControlData
 
-from .const import DOMAIN
+from .const import CONF_API_KEY, CONF_DEVICE_SERIAL, CONF_WORK_MODE_ENTITY, DOMAIN
+from .foxess import FoxESSClient, Inverter
 
 REDACT_KEYS = {
     "api_key",
@@ -22,7 +23,40 @@ REDACT_KEYS = {
     "token",
     "batSn",
     "battery_compound_id",
+    "deviceSN",
+    "sn",
 }
+
+
+async def _scheduler_capabilities(
+    hass: HomeAssistant, entry: ConfigEntry, inverter: Inverter | None
+) -> dict[str, Any] | None:
+    """Read constraints on explicit diagnostics download, even while paused.
+
+    A temporary client performs only the read endpoint; no integration setup,
+    recovery, polling, or control service is invoked.
+    """
+    if entry.options.get(CONF_WORK_MODE_ENTITY):
+        return None
+    if inverter is None:
+        api_key = entry.data.get(CONF_API_KEY)
+        serial = entry.data.get(CONF_DEVICE_SERIAL)
+        if not api_key or not serial:
+            return {"success": False, "error": "CloudCredentialsUnavailable"}
+        inverter = Inverter(FoxESSClient(api_key), serial)
+    try:
+        capabilities = await hass.async_add_executor_job(
+            inverter.get_scheduler_capabilities
+        )
+        if not isinstance(capabilities, dict):
+            raise ValueError("Invalid scheduler capability response")
+        return {"success": True, **capabilities}
+    except Exception as exc:  # Unsupported reads must not break diagnostics/setup.
+        return {
+            "success": False,
+            "error": type(exc).__name__,
+            "errno": getattr(exc, "errno", None),
+        }
 
 
 def _integration_version() -> str | None:
@@ -44,7 +78,17 @@ async def async_get_config_entry_diagnostics(
     """Return diagnostics for a config entry."""
     domain_data: FoxESSControlData | None = hass.data.get(DOMAIN)
     if domain_data is None:
-        return {}
+        return async_redact_data(
+            {
+                "environment": {
+                    "integration_version": _integration_version(),
+                    "scheduler_capabilities": await _scheduler_capabilities(
+                        hass, entry, None
+                    ),
+                }
+            },
+            REDACT_KEYS,
+        )
 
     entry_data = domain_data.entries.get(entry.entry_id)
 
@@ -81,8 +125,10 @@ async def async_get_config_entry_diagnostics(
         "ws_connected": ws_connected,
         "battery_compound_id_status": compound_status,
         "plant_id_present": bool(getattr(domain_data, "plant_id", None)),
-        "inverter_model": getattr(inverter, "model", None) if inverter else None,
+        "inverter_model": inverter.device_type if inverter else None,
         "max_power_w": inverter.max_power_w if inverter else None,
+        "scheduler_capabilities": await _scheduler_capabilities(hass, entry, inverter),
+        "last_schedule_attempt": inverter.last_schedule_attempt if inverter else None,
         "data_source": (
             coordinator_data.get("data_source") if coordinator_data else None
         ),

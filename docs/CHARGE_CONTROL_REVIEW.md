@@ -1,4 +1,9 @@
-# Charge-control correction (unreleased)
+# Charge-control correction (v1.0.23 historical review)
+
+**Live testing subsequently rejected both start and cleanup with 40257.**
+The SelfUse-baseline-first cleanup below did not reach master disable. See the
+[failure evidence and replacement correction](CHARGE_WRITE_FAILURE.md); do not
+treat this historical review or simulator success as H3 control validation.
 
 This change does not authorize live controls or change installed deployments.
 Keep battery-charger observe-only until a separate live test is approved.
