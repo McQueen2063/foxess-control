@@ -183,7 +183,19 @@ def _register_services(hass: HomeAssistant) -> None:
                 group = _sanitize_group(g)
                 group["enable"] = 1
                 kept.append(group)
-            if kept:
+            if mode_filter == WorkMode.FORCE_CHARGE.value and all(
+                g["workMode"] == WorkMode.SELF_USE.value for g in kept
+            ):
+                try:
+                    await hass.async_add_executor_job(
+                        inverter.finish_charge,
+                        min_soc_on_grid,
+                        _cfg(hass).charge_power_ceiling_w,
+                    )
+                except Exception:
+                    _dd(hass).pending_override_cleanup = {"mode": mode_filter}
+                    raise
+            elif kept:
                 await hass.async_add_executor_job(inverter.set_schedule, kept)
             else:
                 await hass.async_add_executor_job(inverter.self_use, min_soc_on_grid)
@@ -552,8 +564,13 @@ def _register_services(hass: HomeAssistant) -> None:
         min_soc_on_grid = _cfg(hass).min_soc_on_grid
         api_min_soc = _cfg(hass).api_min_soc
         effective_max_power = (
-            max_power if max_power is not None else _cfg(hass).max_power_w
+            max_power if max_power is not None else _cfg(hass).charge_power_ceiling_w
         )
+
+        if effective_max_power > _cfg(hass).charge_power_ceiling_w:
+            raise ServiceValidationError(
+                "Requested charge power exceeds the configured inverter power ceiling"
+            )
 
         entity_mode = _cfg(hass).entity_mode
         inverter: Inverter | None = None

@@ -316,6 +316,7 @@ class FoxESSDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.inverter,
                 mode,
                 min_soc_on_grid,
+                _cfg(self.hass).charge_power_ceiling_w,
             )
             domain_data.pending_override_cleanup = None
             _LOGGER.info("Pending override cleanup succeeded: removed %s", mode.value)

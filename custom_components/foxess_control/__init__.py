@@ -246,6 +246,7 @@ async def _async_remove_override(
             inverter,
             mode,
             min_soc_on_grid,
+            _cfg(hass).charge_power_ceiling_w,
         )
 
 
@@ -293,6 +294,7 @@ def _build_foxess_adapter(
         soc_getter=lambda: coordinator.data.get("SoC") if coordinator.data else None,
         export_limit_entity=_cfg(hass).export_limit_entity,
         on_session_started_cb=_on_session_started,
+        cleanup_power_w=_cfg(hass).charge_power_ceiling_w,
     )
     # Seed the adapter with groups built by the service handler
     if state.get("groups"):
@@ -434,6 +436,7 @@ async def _validate_recovery_session(
                     inverter,
                     work_mode,
                     min_soc_on_grid,
+                    _cfg(hass).charge_power_ceiling_w,
                 )
             except Exception:
                 _LOGGER.exception(

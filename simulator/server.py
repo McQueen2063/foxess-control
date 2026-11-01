@@ -215,6 +215,19 @@ async def handle_scheduler_flag(request: web.Request) -> web.Response:
     return _api_response({"enable": _model(request).schedule_enabled, "support": True})
 
 
+async def handle_scheduler_set_flag(request: web.Request) -> web.Response:
+    """Minimal master-switch support for cleanup lifecycle tests."""
+    if sig_err := _check_signature(request):
+        return sig_err
+    if fault := _check_fault(request):
+        return fault
+    body = await request.json()
+    if type(body.get("enable")) is not int or body["enable"] not in (0, 1):
+        return _api_response(None, errno=40257, msg="Invalid enable flag")
+    _model(request).schedule_enabled = bool(body["enable"])
+    return _api_response(None)
+
+
 async def handle_scheduler_enable(request: web.Request) -> web.Response:
     if sig_err := _check_signature(request):
         return sig_err
@@ -514,6 +527,7 @@ def create_app() -> web.Application:
     app.router.add_post("/op/v0/device/scheduler/get", handle_scheduler_get)
     app.router.add_post("/op/v0/device/setting/get", handle_base_work_mode)
     app.router.add_post("/op/v1/device/scheduler/get/flag", handle_scheduler_flag)
+    app.router.add_post("/op/v1/device/scheduler/set/flag", handle_scheduler_set_flag)
     app.router.add_post("/op/v0/device/scheduler/enable", handle_scheduler_enable)
     app.router.add_get("/op/v0/device/battery/soc/get", handle_battery_soc_get)
     app.router.add_post("/op/v0/device/battery/soc/set", handle_battery_soc_set)

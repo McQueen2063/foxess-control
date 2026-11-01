@@ -39,6 +39,16 @@ class IntegrationConfig:
     entity_mode: bool
     export_limit_entity: str | None = None
     additional_pv_power_variable: str | None = None
+    max_charge_power_w: int | None = None
+
+    @property
+    def charge_power_ceiling_w(self) -> int:
+        """Optional charge-only ceiling, never above the inverter rating."""
+        if self.max_charge_power_w is None:
+            return self.max_power_w
+        if self.max_charge_power_w < 100:
+            raise ValueError("Maximum charge power must be at least 100 W")
+        return min(self.max_power_w, self.max_charge_power_w)
 
 
 def build_config(
@@ -100,6 +110,11 @@ def build_config(
             entry_options.get(CONF_MIN_POWER_CHANGE, DEFAULT_MIN_POWER_CHANGE)
         ),
         max_power_w=max_power_w,
+        max_charge_power_w=(
+            int(entry_options["max_charge_power_w"])
+            if entry_options.get("max_charge_power_w") is not None
+            else None
+        ),
         grid_export_limit_w=int(
             entry_options.get(CONF_GRID_EXPORT_LIMIT, DEFAULT_GRID_EXPORT_LIMIT)
         ),

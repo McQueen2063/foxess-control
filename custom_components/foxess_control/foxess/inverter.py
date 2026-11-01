@@ -253,6 +253,26 @@ class Inverter:
 
     # --- Convenience methods ---
 
+    def finish_charge(self, min_soc_on_grid: int, power_w: int) -> None:
+        """Remove a charge-only schedule and return to a verified SelfUse base.
+
+        Write SelfUse first so a failed flag read/write cannot leave ForceCharge
+        running. Keep that harmless baseline for legacy schedule-mode readers.
+        Never disable the master switch over an unknown/conflicting base mode.
+        """
+        self.set_work_mode(
+            WorkMode.SELF_USE,
+            min_soc_on_grid=min_soc_on_grid,
+            fd_soc=max(11, min_soc_on_grid),
+            fd_pwr=power_w,
+        )
+        if self.get_base_work_mode() != WorkMode.SELF_USE.value:
+            raise ValueError("Cannot restore idle scheduler over a non-SelfUse base")
+        self.client.post(
+            "/op/v1/device/scheduler/set/flag",
+            {"deviceSN": self.sn, "enable": 0},
+        )
+
     def self_use(self, min_soc_on_grid: int = 11, api_min_soc: int = 11) -> None:
         """Switch to self-use mode (default operating mode)."""
         self.set_work_mode(

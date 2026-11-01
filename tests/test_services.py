@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+from dataclasses import replace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -369,7 +370,8 @@ class TestHandleClearOverrides:
 
         await handler(_make_call({"mode": "ForceCharge"}))
 
-        inv.self_use.assert_called_once()
+        inv.finish_charge.assert_called_once()
+        inv.self_use.assert_not_called()
         inv.set_schedule.assert_not_called()
 
     @pytest.mark.asyncio
@@ -2561,6 +2563,37 @@ class TestSessionBoundaryCleanness:
 
 class TestHandleSmartCharge:
     """Tests for handle_smart_charge service handler."""
+
+    @pytest.mark.asyncio
+    async def test_power_above_configured_ceiling_rejected_before_writes(self) -> None:
+        inv = MagicMock(spec=Inverter)
+        inv.max_power_w = 12600
+        hass = _make_hass(
+            inverter=inv,
+            battery_capacity_kwh=11.0,
+            coordinator_data={"SoC": 50.0},
+        )
+        hass.data[DOMAIN].config = replace(
+            hass.data[DOMAIN].config, max_charge_power_w=4000
+        )
+        from custom_components.foxess_control import _register_services
+
+        _register_services(hass)
+        handler = _get_handler(hass, "smart_charge")
+        with pytest.raises(ServiceValidationError, match="power ceiling"):
+            await handler(
+                _make_call(
+                    {
+                        "start_time": datetime.time(2, 0),
+                        "end_time": datetime.time(3, 0),
+                        "target_soc": 80,
+                        "power": 4001,
+                    }
+                )
+            )
+        inv.set_schedule.assert_not_called()
+        inv.finish_charge.assert_not_called()
+        assert hass.data[DOMAIN].smart_charge_state is None
 
     @pytest.mark.asyncio
     async def test_smart_charge_defers_when_window_long_enough(self) -> None:
@@ -5409,8 +5442,8 @@ class TestRemainingZeroCancels:
         # Session should be cancelled
         assert hass.data[DOMAIN].smart_charge_state is None
         assert hass.data[DOMAIN].smart_charge_unsubs == []
-        # Override should be removed (self_use called via _remove_mode_from_schedule)
-        inv.self_use.assert_called()
+        # Charge-only cleanup restores the disabled idle scheduler.
+        inv.finish_charge.assert_called()
 
 
 class TestTransientApiErrorResilience:

@@ -305,6 +305,7 @@ def _remove_mode_from_schedule(
     inverter: Inverter,
     mode: WorkMode,
     min_soc_on_grid: int,
+    charge_power_w: int | None = None,
 ) -> None:
     """Remove all groups of *mode* from the schedule, keeping other modes."""
     schedule = inverter.get_schedule()
@@ -325,7 +326,13 @@ def _remove_mode_from_schedule(
         group = _sanitize_group(raw_group)
         group["enable"] = 1
         kept.append(group)
-    if kept:
+    if (
+        mode == WorkMode.FORCE_CHARGE
+        and charge_power_w is not None
+        and all(g["workMode"] == WorkMode.SELF_USE.value for g in kept)
+    ):
+        inverter.finish_charge(min_soc_on_grid, charge_power_w)
+    elif kept:
         _LOGGER.debug("After filtering: %d groups remain: %s", len(kept), kept)
         inverter.set_schedule(kept)
     else:
@@ -375,6 +382,7 @@ class FoxESSCloudAdapter:
         soc_getter: Any = None,
         export_limit_entity: str | None = None,
         on_session_started_cb: Callable[[str], None] | None = None,
+        cleanup_power_w: int | None = None,
     ) -> None:
         self._hass = hass
         self._inverter = inverter
@@ -390,6 +398,7 @@ class FoxESSCloudAdapter:
         self._warned_missing_export_limit = False
         self._first_export_write_logged = False
         self._on_session_started_cb = on_session_started_cb
+        self._cleanup_power_w = cleanup_power_w
 
     def get_max_power_w(self) -> int:
         return self._inverter.max_power_w
@@ -507,6 +516,7 @@ class FoxESSCloudAdapter:
             self._inverter,
             mode,
             self._min_soc_on_grid,
+            self._cleanup_power_w,
         )
         self._groups = []
 

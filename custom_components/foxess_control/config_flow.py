@@ -409,6 +409,19 @@ class FoxessControlOptionsFlow(OptionsFlow):
 
         schema = battery_options_schema(self._config_entry)
         schema = schema.extend(_additional_pv_schema_dict(self._config_entry.options))
+        # Charge-only ceiling also applies to cloud mode; entity mappings and
+        # the inverter's rated/discharge power remain unchanged.
+        power_key = (
+            vol.Optional(
+                "max_charge_power_w",
+                default=self._config_entry.options["max_charge_power_w"],
+            )
+            if "max_charge_power_w" in self._config_entry.options
+            else vol.Optional("max_charge_power_w")
+        )
+        schema = schema.extend(
+            {power_key: vol.All(vol.Coerce(int), vol.Range(min=100, max=30000))}
+        )
         # Show WebSocket option only when web credentials are configured
         if self._config_entry.data.get(CONF_WEB_USERNAME):
             opts = self._config_entry.options
