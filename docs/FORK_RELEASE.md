@@ -1,4 +1,63 @@
-# Fork release review: 1.0.22
+# Fork release review: 1.0.23
+
+**Status: prepared for review; publication and installation not yet approved.**
+
+Published baseline: fork v1.0.22 (`b51348a`), based on upstream v1.0.21.
+Implementation merge: `b9943da44caf233e469229312556a547929c9997`.
+Forgejo is authoritative; GitHub is a one-way HACS distribution mirror.
+
+## Current release gates
+
+- [x] Implementation reviewed and merged (PR #8).
+- [x] Post-merge [run #30](https://git.kernel32.de/utt/foxess-control/actions/runs/30)
+  passed unit/lint/type checks and HA simulator lifecycle tests: 40 passed,
+  27 intentional backend-specific skips. HA tests took about 40 minutes.
+- [ ] Release PR reviewed/merged; exact release merge commit passes CI including
+  the manifest/changelog/version-order test. Record its SHA and run URL.
+- [ ] User approves the exact release commit, `v1.0.23` tag and
+  [draft GitHub Release text](RELEASE_v1.0.23.md).
+- [ ] Tag only the approved commit in Forgejo, verify the GitHub mirror matches,
+  then publish the GitHub Release separately. No automatic deployment.
+- [ ] Verify HACS offers v1.0.23 before scheduling the HA update.
+
+## Current scope and HA update
+
+See [control changes and limitations](CHARGE_CONTROL_REVIEW.md). The release
+adds an optional charge-only ceiling and fixes charge-only cloud cleanup; it
+does not establish H3 hardware enforcement or an independent target-SoC cutoff.
+Mode-scoped clearing still requires exclusive charging authority. Multi-hour
+soak and broader UI E2E remain unverified; the v1.0.22 read-only soak deferral
+must not be treated as approval for production controls in this release.
+
+After separate installation approval, proceed one user-confirmed step at a time:
+
+1. Confirm no active smart operation or pending recovery/cleanup. The integration
+   can write during recovery even while battery-charger is observe-only.
+2. Take and verify an HA backup. Retain fork v1.0.22 as the code rollback version.
+3. Update the existing fork through HACS to the exact approved v1.0.23 release.
+   Do not remove/recreate the integration entry or change entity identities.
+4. Restart HA, verify the installed version, original entry/entities, read-only
+   status timestamps and absence of setup/recovery errors.
+5. Set **Maximum charge power (W)** to the separately agreed conservative ceiling
+   (currently planned: 4000 W). Confirm the option survives reload and status
+   polling resumes. This does not authorize a charging service call.
+6. Keep battery-charger `observe_only: true`, `exclusive_control: false`.
+   A bounded live power/stop test requires separate explicit approval.
+
+Rollback with no active operation: restore fork v1.0.22 code and restart HA
+without deleting the entry. The older code ignores the new optional ceiling;
+do not rely on that ceiling after downgrade. If code-only rollback is insufficient,
+restore the verified backup through HA's supported process. No database or
+session-storage migration is introduced by v1.0.23.
+
+---
+
+## Historical v1.0.22 release-review record
+
+The following is the original checklist, not the current release status.
+v1.0.22 was subsequently published at `b51348a` after green run #26 and installed
+with preserved entry/entity identities. Its read-only sensors were verified live,
+including independently advancing successful base/scheduler timestamps.
 
 **Status: prepared, not approved for publication or installation.**
 

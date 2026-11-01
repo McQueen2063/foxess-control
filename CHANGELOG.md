@@ -1,8 +1,41 @@
 # Changelog
 
+## 1.0.23
+
+Release candidate; not published yet. Based on fork v1.0.22 (upstream v1.0.21).
+
+### Added
+- Optional **Maximum charge power (W)** integration option (`max_charge_power_w`)
+  for cloud/entity smart charging. Requests above the ceiling are rejected before
+  writes or session cancellation; omitted power uses the ceiling. It cannot
+  exceed the integration's inverter rating. Discharge settings are unchanged.
+
+### Fixed
+- Charge-only cloud cleanup writes a bounded SelfUse baseline, preserves the
+  configured grid reserve, verifies the SelfUse base, then disables the scheduler
+  master switch. Failed cleanup uses the existing retry path. This allows a later
+  battery-charger session to satisfy the disabled-scheduler idle guard.
+- Other non-SelfUse schedules retain existing mode-scoped clearing behavior;
+  clearing is not session-owner-scoped. Entity-mode cleanup and unscoped clearing
+  are unchanged. The E2E options helper now omits unset optional fields.
+
+### Validation and limitations
+- Implementation merge `b9943da` passed [Forgejo run #30](https://git.kernel32.de/utt/foxess-control/actions/runs/30):
+  unit/lint/type checks and real-HA simulator lifecycle tests (40 passed,
+  27 intentional backend-specific skips). Exact release commit must pass again.
+- Actual H3 charging-power enforcement is not verified. Target SoC remains
+  HA-managed, not an independent inverter cutoff (`fdSoc: 100`). The default
+  capacity × 1050 rating is not an H3-specific hardware guarantee.
+- Existing domain, config-entry/session formats and entity identities remain.
+  No live controls or deployment changes are approved by this release review.
+  Keep battery-charger observe-only; see [release gates](docs/FORK_RELEASE.md).
+- Multi-hour soak and broader UI E2E validation remain unverified; no new soak
+  deferral or live-control approval is implied by the previous status release.
+
 ## 1.0.22
 
-Fork release candidate, based on upstream v1.0.21. Not published yet.
+Published fork release, based on upstream v1.0.21. The release-review notes below
+record its original read-only scope; see the current release checklist for gates.
 
 ### Added
 - Independent read-only Base Work Mode, Scheduler Status, and Mode Status Read
