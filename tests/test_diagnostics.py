@@ -6,7 +6,7 @@ import asyncio
 from collections import deque
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.foxess_control.const import DOMAIN
 from custom_components.foxess_control.diagnostics import (
@@ -119,3 +119,42 @@ def test_diagnostics_redacts_secrets_everywhere() -> None:
     assert "SN123" not in flat
     assert "LEAKED" not in flat
     assert "SN999" not in flat
+
+
+def test_paused_entry_capability_diagnostics_do_not_load_or_write() -> None:
+    hass, entry = _make_hass_and_entry(None)
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
+    client = MagicMock()
+    client.post.return_value = {
+        "deviceSN": "SN123",
+        "groups": [],
+        "properties": {"fdpwr": {"min": 0, "max": 12000}},
+    }
+    with patch(
+        "custom_components.foxess_control.diagnostics.FoxESSClient",
+        return_value=client,
+    ):
+        result = _run(async_get_config_entry_diagnostics(hass, entry))
+    probe = result["environment"]["scheduler_capabilities"]
+    assert probe["success"] is True
+    assert probe["properties"]["fdpwr"]["max"] == 12000
+    client.post.assert_called_once_with(
+        "/op/v3/device/scheduler/get", {"deviceSN": "SN123"}
+    )
+    hass.config_entries.async_reload.assert_not_called()
+    assert "SECRET" not in str(result) and "SN123" not in str(result)
+
+
+def test_unsupported_capability_read_is_explicit_not_a_guessed_limit() -> None:
+    hass, entry = _make_hass_and_entry(None)
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
+    client = MagicMock()
+    client.post.return_value = None
+    with patch(
+        "custom_components.foxess_control.diagnostics.FoxESSClient",
+        return_value=client,
+    ):
+        result = _run(async_get_config_entry_diagnostics(hass, entry))
+    assert result["environment"]["scheduler_capabilities"] == {
+        "success": False, "error": "ValueError", "errno": None,
+    }

@@ -73,7 +73,8 @@ def test_charge_stop_second_charge_restores_idle(foxess_sim: SimulatorHandle) ->
         assert inv.get_scheduler_flag()["enable"] is True
         _remove_mode_from_schedule(inv, WorkMode.FORCE_CHARGE, 20, 4000)
         assert inv.get_scheduler_flag()["enable"] is False
-        assert inv.get_current_mode() == WorkMode.SELF_USE
+        assert inv.get_current_mode() is None
+        assert inv.get_schedule()["groups"][0]["workMode"] == "ForceCharge"
 
 
 def test_force_charge(foxess_sim: SimulatorHandle) -> None:

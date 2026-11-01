@@ -2,8 +2,9 @@
 
 > **Maintained fork of [nicois/foxess-control](https://github.com/nicois/foxess-control),
 > based on upstream v1.0.21.** Published v1.0.22 adds read-only base-mode/scheduler
-> status. Candidate v1.0.23 adds a charge-power ceiling and charge cleanup fixes;
-> it is under review, not published yet. Live controls remain approval-gated.
+> status. Published v1.0.23 adds a charge-power ceiling and cleanup changes, but
+> H3 live testing exposed rejected writes with scheduler side effects. Controls
+> remain blocked for that installation; see [failure/correction review](docs/CHARGE_WRITE_FAILURE.md).
 > See [status semantics](docs/FORK_STATUS.md), [control review](docs/CHARGE_CONTROL_REVIEW.md), and
 > [release gates, migration and rollback](docs/FORK_RELEASE.md).
 
