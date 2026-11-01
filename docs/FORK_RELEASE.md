@@ -20,6 +20,10 @@ Forgejo is authoritative; GitHub is a one-way HACS distribution mirror.
   then publish the GitHub Release separately. No automatic deployment.
 - [ ] Verify HACS offers v1.0.23 before scheduling the HA update.
 
+Version/docs-only releases use the [fast CI gate](CI_TEST_GATES.md). A skipped HA
+job does not add simulation evidence; the unchanged runtime was validated in
+run #30. Manual dispatch can repeat the full suites if needed.
+
 ## Current scope and HA update
 
 See [control changes and limitations](CHARGE_CONTROL_REVIEW.md). The release
