@@ -5798,6 +5798,7 @@ class TestStaleWorkModeAfterCleanupFailure:
         # Make ALL API calls fail (simulates DNS outage)
         inv.set_schedule.side_effect = FoxESSApiError(41935, "Device offline")
         inv.self_use.side_effect = FoxESSApiError(41935, "Device offline")
+        inv.finish_charge.side_effect = FoxESSApiError(41935, "Device offline")
 
         # Fire errors: 3 to open circuit breaker + 5 to exhaust hold → abort
         total_ticks = (
@@ -5814,6 +5815,7 @@ class TestStaleWorkModeAfterCleanupFailure:
         assert hass.data[DOMAIN].smart_charge_state is None
 
         # A pending cleanup must be stored so the coordinator can retry
+        inv.finish_charge.assert_called_once_with(DEFAULT_MIN_SOC_ON_GRID, 10500)
         pending = hass.data[DOMAIN].pending_override_cleanup
         assert pending is not None
         assert pending["mode"] == "ForceCharge"
