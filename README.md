@@ -1,9 +1,10 @@
 # FoxESS Control
 
 > **Maintained fork of [nicois/foxess-control](https://github.com/nicois/foxess-control),
-> based on upstream v1.0.21.** Adds read-only base-mode/scheduler status without
-> changing existing controls. Fork v1.0.22 is under release review, not published
-> yet. See [status semantics](docs/FORK_STATUS.md) and
+> based on upstream v1.0.21.** Published v1.0.22 adds read-only base-mode/scheduler
+> status. Candidate v1.0.23 adds a charge-power ceiling and charge cleanup fixes;
+> it is under review, not published yet. Live controls remain approval-gated.
+> See [status semantics](docs/FORK_STATUS.md), [control review](docs/CHARGE_CONTROL_REVIEW.md), and
 > [release gates, migration and rollback](docs/FORK_RELEASE.md).
 
 A Home Assistant custom integration for monitoring and controlling FoxESS inverter battery modes.

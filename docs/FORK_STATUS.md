@@ -1,8 +1,10 @@
-# Read-only mode status (fork development)
+# Read-only mode status
 
-This fork starts from upstream v1.0.21. Existing controls, the legacy Work Mode
-sensor, config-entry schemas, credentials and session storage remain unchanged.
-The following additive sensors do not write inverter settings or schedules:
+This fork starts from upstream v1.0.21. Published fork v1.0.22 added these sensors
+without changing controls, the legacy Work Mode sensor, credentials or session
+storage. Candidate v1.0.23 separately changes charging controls; see the
+[control review](CHARGE_CONTROL_REVIEW.md). The following additive sensors do not
+write inverter settings or schedules:
 
 - **Base Work Mode** reads `/op/v0/device/setting/get`, key `WorkMode`. It is
   the base device setting, not necessarily the effective mode while the
@@ -29,8 +31,9 @@ of instantaneous physical state. In particular, enabled scheduler status does
 not identify the active schedule group. No new effective-mode inference is made.
 Unknown/malformed API replies must not be interpreted as SelfUse or disabled.
 
-This work is not released yet. Do not switch HACS until release/CI review and an
-HA backup are complete. Keep the existing FoxESS config entry when replacing
+These sensors shipped in v1.0.22 and were verified live, including advancing
+successful timestamps. Later releases still require their own release/CI review
+and an HA backup before installation. Keep the existing FoxESS entry when replacing
 code; do not remove/recreate it. Migration and rollback must happen without an
 active smart operation because existing startup recovery can perform writes.
 
@@ -40,14 +43,15 @@ Forgejo runs `.forgejo/workflows/test.yml` using the existing Docker-capable
 `ubuntu-latest` runner pattern. `Dockerfile.ci` installs Python 3.13, the locally
 validated Home Assistant 2026.2.3, and Chromium plus its runtime dependencies.
 It checks changed Python modules and runs the complete non-container test suite,
-including browser unit tests. Container-based HA E2E and soak tests remain a
-separate release prerequisite; this workflow must not be described as full E2E.
+including browser unit tests. A second job runs HA-container status and lifecycle
+tests. Broader UI E2E and multi-hour soak tests are not included; this workflow
+must not be described as full E2E.
 
 The imported GitHub release, add-on publishing, and tag-triggered flaky-test
 workflows are restricted to the original upstream repository. Mirroring fork
 tags must not publish anything automatically. A fork GitHub Release will be
 created separately, only after explicit approval of the tested commit/version.
-The release-review change prepares manifest version `1.0.22`; no release
+The current release review prepares manifest version `1.0.23`; no release
 tag is created automatically. See [release gates and migration](FORK_RELEASE.md).
 
 ## HA status smoke gate
