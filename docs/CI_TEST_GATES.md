@@ -11,7 +11,8 @@ compares the pre-push SHA with the checked-out head. Full history is fetched.
 Full unit/browser and HA status/lifecycle jobs run for runtime code, dependencies,
 Dockerfiles, simulator changes, general tests, translations, unknown paths, or any
 manifest change other than `version`. Missing/unresolvable bases and empty diffs
-also select full tests. Both full jobs remain parallel and can use either runner.
+also select full tests. Both full jobs remain parallel. Unit/browser tests use
+`ubuntu-latest`; nested-Podman HA tests require `ubuntu-latest-hardware`.
 
 Metadata-only diffs skip both heavy jobs. The exact allowlist is Markdown,
 `tests/test_fork_release.py`, version-only manifest edits, and this workflow's
@@ -27,3 +28,25 @@ implementation run #30, while the release commit must pass fast metadata checks.
 
 Imported upstream publication jobs, tag policy and deployment approvals are
 unchanged. Cancelling a CI run is not stopping an installed integration/session.
+
+## HA image-build setup budget
+
+Main run #44 on flux passed checks/unit tests but had 60 HA setup errors:
+`filelock.Timeout` waiting for `/src/.e2e-build.lock`. Eight cases passed on the
+other worker. These were shared fixture errors, not 60 control assertion failures.
+The same runtime passed PR run #43: 41 passed / 27 intentional skips, including
+the disabled-cold-start capability flow.
+
+The two xdist workers serialize their image builds with a lock. Previously a
+waiter was allowed only 300 seconds while the build holding that lock was allowed
+600 seconds. A valid slow build could therefore fail the waiting worker's session
+fixture and cache that setup failure across its tests. This budget mismatch is
+confirmed; the log does not establish why the particular lock holder was slow.
+
+The lock wait now derives from the unchanged 600-second build timeout plus a
+60-second release margin. Build-start/completion timing is logged for diagnosis.
+Unit checks model a holder needing up to its full allowed budget and verify both
+failed and timed-out builds release the lock. Builds and waits remain bounded;
+test assertions, worker count and production runtime code are unchanged. A lock
+timeout does not establish a VM/hardware fault and is not fixed by deleting a live
+lock file. Full CI must validate the fixture correction before release preparation.
