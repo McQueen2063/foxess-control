@@ -547,10 +547,11 @@ class TestDataSource:
         periodic timer callback must trigger WS — but the timer uses
         the unwrapped callback that doesn't call _maybe_start_realtime_ws.
 
-        Setup: low energy to discharge (SoC 25%, min_soc 20%) with a
-        10-min window.  At 10.5 kW max power the ~0.5 kWh discharge
-        only needs ~3.3 min (with headroom), so the algorithm defers
-        for ~5 min before starting forced discharge.
+        Start with little energy to discharge (SoC 25%, min_soc 20%)
+        and verify deferral. Then raise simulator SoC to 80%, making
+        deferral infeasible within the same window. The normal listener
+        must activate the session and connect WS. This checks transition
+        wiring, not the exact pacing/deferred-start calculation.
 
         The SoC must propagate to the coordinator BEFORE the service
         call, otherwise the coordinator's default 50% SoC makes the
@@ -583,11 +584,22 @@ class TestDataSource:
             timeout_s=60,
         )
 
-        # Wait for deferred→active transition (up to ~7 min)
+        # Do not guess the deferred deadline: rounding, household consumption
+        # and the periodic listener tick can legitimately push it beyond 7 min.
+        # Change only simulator telemetry, not HA session state or the clock.
+        foxess_sim.set(soc=80)
+        ha_e2e.wait_for_numeric_state(
+            "sensor.foxess_battery_soc",
+            "ge",
+            79,
+            timeout_s=90,
+        )
+
+        # The normal listener must now end deferral and start discharge.
         ha_e2e.wait_for_state(
             "sensor.foxess_smart_operations",
             "discharging",
-            timeout_s=420,
+            timeout_s=120,
             fatal_states=FATAL_FOR_ACTIVE,
         )
 
