@@ -360,6 +360,7 @@
           "battery_capacity_kwh": "バッテリー容量 (kWh)",
           "min_power_change": "スマート充電の最小電力変化 (W)",
           "api_min_soc": "API 最低 fdSoc (%) — ⚠️ 11 未満の値は一部のファームウェアで動作しない場合があります",
+          "scheduler_api_version": "Cloud scheduler API (v0 legacy; v1 flat maxSoc, opt-in)",
           "polling_interval": "API ポーリング間隔（秒）",
           "additional_pv_power_variable": "追加の太陽光発電電力変数"
         },

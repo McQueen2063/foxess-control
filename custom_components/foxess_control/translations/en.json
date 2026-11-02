@@ -369,6 +369,7 @@
           "battery_capacity_kwh": "Battery Capacity (kWh)",
           "min_power_change": "Minimum Power Change for Smart Charge (W)",
           "api_min_soc": "Minimum API fdSoc (%) — ⚠️ Values below 11 may not work with all firmware versions",
+          "scheduler_api_version": "Cloud scheduler API (v0 legacy; v1 flat maxSoc, opt-in)",
           "polling_interval": "API Polling Interval (seconds)",
           "bms_polling_interval": "BMS Temperature Polling Interval (seconds)",
           "smart_headroom": "Smart Headroom (%)",

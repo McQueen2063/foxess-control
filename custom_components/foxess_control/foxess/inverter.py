@@ -16,8 +16,6 @@ __all__ = ["Inverter", "MinSocSettings", "ScheduleGroup", "WorkMode"]
 
 _LOGGER = logging.getLogger(__name__)
 
-_SCHEDULE_ENDPOINT = "/op/v0/device/scheduler/enable"
-
 
 def _parse_real_time(result: Any) -> dict[str, Any]:
     """Extract variable->value map from the real-time query response.
@@ -40,9 +38,19 @@ class Inverter:
     # the fdPwr value in watts.  The FoxESS app uses capacity * 1050.
     CAPACITY_TO_FD_PWR = 1050
 
-    def __init__(self, client: FoxESSClient, serial_number: str) -> None:
+    def __init__(
+        self,
+        client: FoxESSClient,
+        serial_number: str,
+        *,
+        scheduler_api_version: str = "v0",
+    ) -> None:
+        if scheduler_api_version not in ("v0", "v1"):
+            raise ValueError("Scheduler API version must be v0 or v1")
         self.client = client
         self.sn = serial_number
+        self.scheduler_api_version = scheduler_api_version
+        self._schedule_endpoint = f"/op/{scheduler_api_version}/device/scheduler/enable"
         self._max_power_w: int | None = None
         self._device_type: str | None = None
         self.last_schedule_attempt: dict[str, Any] | None = None
@@ -168,7 +176,8 @@ class Inverter:
         returns ``null``; this method normalises that to an empty schedule.
         """
         result: Any = self.client.post(
-            "/op/v0/device/scheduler/get", {"deviceSN": self.sn}
+            f"/op/{self.scheduler_api_version}/device/scheduler/get",
+            {"deviceSN": self.sn},
         )
         if result is None:
             return {"enable": 0, "groups": []}
@@ -225,6 +234,13 @@ class Inverter:
         API plus whatever the API returned.  The POST runs first so a
         failing write does not produce a misleading event.
         """
+        if self.scheduler_api_version == "v1":
+            # Explicit opt-in only; no retry against another write endpoint.
+            # V1 uses flat fields, not V2/V3's extraParam. Keep the existing
+            # HA-managed charge target semantics: default maxSoc remains 100.
+            groups = [
+                {**group, "maxSoc": group.get("maxSoc", 100)} for group in groups
+            ]
         charge_only = any(
             g.get("workMode") == WorkMode.FORCE_CHARGE.value for g in groups
         ) and all(
@@ -241,7 +257,7 @@ class Inverter:
                     raise ValueError("Cannot start charge from a non-SelfUse base")
                 restore_idle = True
         self.last_schedule_attempt = {
-            "endpoint": _SCHEDULE_ENDPOINT,
+            "endpoint": self._schedule_endpoint,
             "call_site": call_site,
             "groups": [dict(g) for g in groups],
             "status": "pending",
@@ -249,7 +265,7 @@ class Inverter:
         }
         try:
             response = self.client.post(
-                _SCHEDULE_ENDPOINT,
+                self._schedule_endpoint,
                 {"deviceSN": self.sn, "groups": groups},
             )
         except Exception as exc:
@@ -281,7 +297,7 @@ class Inverter:
             SCHEDULE_WRITE,
             groups=[dict(g) for g in groups],
             response=response,
-            endpoint=_SCHEDULE_ENDPOINT,
+            endpoint=self._schedule_endpoint,
             call_site=call_site,
         )
 

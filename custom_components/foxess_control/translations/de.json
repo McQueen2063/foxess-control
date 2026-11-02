@@ -356,6 +356,7 @@
           "battery_capacity_kwh": "Batteriekapazität (kWh)",
           "min_power_change": "Minimale Leistungsänderung für intelligentes Laden (W)",
           "api_min_soc": "Minimaler API-fdSoc (%) — ⚠️ Werte unter 11 funktionieren möglicherweise nicht mit allen Firmware-Versionen",
+          "scheduler_api_version": "Cloud-Scheduler-API (v0 bisher; v1 mit flachem maxSoc, optional)",
           "polling_interval": "API-Abfrageintervall (Sekunden)",
           "additional_pv_power_variable": "Zusätzliche Solarleistungs-Variable"
         },

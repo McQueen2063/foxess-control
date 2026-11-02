@@ -113,6 +113,7 @@ from .smart_battery.const import (
 DOMAIN = "foxess_control"
 CONF_API_KEY = "api_key"
 CONF_DEVICE_SERIAL = "device_serial"
+CONF_SCHEDULER_API_VERSION = "scheduler_api_version"
 
 # Web portal credentials (optional, for WebSocket real-time data)
 CONF_WEB_USERNAME = "web_username"

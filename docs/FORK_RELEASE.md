@@ -1,5 +1,12 @@
 # Fork release review: 1.0.25
 
+**Subsequent result:** published/installed v1.0.25 passed the live read-only
+capability check. The user then accepted startup recovery/cleanup risk and approved
+re-enabling the existing entry for monitoring; it loaded normally with SelfUse,
+disabled scheduler and idle Smart Operations. Battery-charger remains observe-only.
+No new live charge test was performed. See [comparison/current plan](H3_SCHEDULER_COMPARISON.md).
+The checklist below is the historical release-preparation record.
+
 **Status: prepared for review; no tag, publication or installation approval yet.**
 
 Installed baseline is v1.0.24, user-disabled across restart. Keep battery-charger
