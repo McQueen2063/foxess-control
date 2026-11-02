@@ -51,7 +51,8 @@ jobs:
   ha-status-smoke:
     needs: checks
     if: needs.checks.outputs.full == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    # Nested-Podman HA lifecycle tests require a physical-host runner.
+    runs-on: ubuntu-latest-hardware
     timeout-minutes: 120
     steps:
       - name: Checkout repository
