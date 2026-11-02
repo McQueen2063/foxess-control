@@ -1,4 +1,45 @@
-# Fork release review: 1.0.25
+# Fork release review: 1.0.26
+
+**Status: prepared for review; no tag, publication, installation or v1 opt-in approved yet.**
+
+Installed baseline v1.0.25 is enabled for telemetry with the user's accepted
+startup recovery/cleanup risk. Leave it running; battery-charger remains
+`observe_only: true`, `exclusive_control: false`. No new control test is approved.
+
+## v1.0.26 gates
+
+- [x] PR #18 reviewed/merged; full PR run #49 passed.
+- [ ] Merged runtime commit `8edb6c05105acf34a070b2c302d4ffc3525df5da` passes
+  [run #50](https://git.kernel32.de/utt/foxess-control/actions/runs/50).
+- [ ] Version/docs-only release PR reviewed/merged; exact merge passes fast
+  metadata checks. Heavy jobs should skip; no duplicate manual simulation needed.
+- [ ] User approves exact release commit, new `v1.0.26` tag and
+  [draft GitHub Release notes](RELEASE_v1.0.26.md).
+- [ ] Tag in Forgejo, verify identical GitHub mirror commit/tag, then publish
+  the GitHub Release separately and verify HACS availability.
+
+## Installation and explicit v1 selection
+
+After separate installation approval and a fresh verified HA backup, update the
+existing HACS fork and restart. Preserve the original entry, credentials/session
+storage and entities. Do not disable an otherwise healthy monitoring entry merely
+to install this release. Verify no active smart session before restart and obtain
+separate approval to resolve one if found. Retain v1.0.25 for code rollback.
+
+Default scheduling remains v0. With separate configuration approval, change only
+**Cloud scheduler API** to `v1` and verify reload, unchanged options and fresh
+telemetry. Reload may run normal session recovery; selecting v1 is not permission
+to start a new control session. No automatic endpoint retry is introduced.
+
+Read [the payload comparison](H3_SCHEDULER_COMPARISON.md) before any bounded live
+test. V1 is a compatibility candidate, not proven H3 support. Existing full HA
+simulator lifecycle tests use default v0; v1 has exact mocked transport/payload/
+rollback and options-flow coverage. Neither proves charging-power enforcement.
+Keep battery-charger observe-only; request new explicit control-test approval.
+
+---
+
+# Historical v1.0.25 release-review record
 
 **Subsequent result:** published/installed v1.0.25 passed the live read-only
 capability check. The user then accepted startup recovery/cleanup risk and approved
