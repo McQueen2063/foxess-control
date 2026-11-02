@@ -279,8 +279,14 @@
         "description": "Wie ist Ihr Wechselrichter angeschlossen?",
         "menu_options": {
           "cloud": "FoxESS Cloud (API-Schlüssel)",
-          "entity": "Meinen foxess_modbus-Wechselrichter verwenden (kein API-Schlüssel erforderlich)"
+          "entity": "Meinen foxess_modbus-Wechselrichter verwenden (kein API-Schlüssel erforderlich)",
+          "scheduler_diagnostics": "Scheduler-Fähigkeiten eines pausierten Wechselrichters lesen (keine Steuerung)"
         }
+      },
+      "scheduler_diagnostics": {
+        "title": "Scheduler-Fähigkeiten nur lesen",
+        "description": "Wählen Sie einen vorhandenen, vom Benutzer deaktivierten Cloud-Eintrag. Beim Absenden werden nur die v3-Scheduler-Fähigkeiten mit den gespeicherten Zugangsdaten gelesen. Es wird kein Eintrag erstellt, aktiviert oder geändert. Keine Wiederherstellung, Abfrageintervalle oder Schreibzugriffe werden gestartet. Der ursprüngliche Eintrag bleibt pausiert.",
+        "data": { "entry_id": "Pausierter Wechselrichter" }
       },
       "cloud": {
         "title": "FoxESS Control",
@@ -329,9 +335,12 @@
       }
     },
     "abort": {
+      "no_paused_cloud_entry": "Kein geeigneter, vom Benutzer deaktivierter Cloud-Eintrag verfügbar. Keine Abfrage oder Konfigurationsänderung durchgeführt.",
+      "scheduler_capabilities_read": "Ergebnis der reinen Leseabfrage (success=false bedeutet nicht unterstützt oder fehlgeschlagen). Kein Eintrag wurde erstellt oder aktiviert.\n\n```json\n{capabilities}\n```",
       "reconfigure_successful": "Web credentials updated successfully."
     },
     "error": {
+      "invalid_paused_entry": "Wählen Sie einen vorhandenen, vom Benutzer deaktivierten Cloud-Eintrag. Er wurde möglicherweise inzwischen aktiviert oder entfernt.",
       "cannot_connect": "Verbindung zur FoxESS Cloud API nicht möglich. Überprüfen Sie Ihre Netzwerkverbindung.",
       "invalid_auth": "Authentifizierung fehlgeschlagen. Überprüfen Sie Ihren API-Schlüssel und die Geräte-Seriennummer.",
       "web_auth_failed": "Web portal login failed. Check your username and password.",

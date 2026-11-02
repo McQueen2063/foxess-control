@@ -278,9 +278,15 @@
         "title": "FoxESS Control",
         "description": "Comment votre onduleur est-il connecté ?",
         "menu_options": {
+          "scheduler_diagnostics": "Read scheduler capabilities for a paused inverter (no controls)",
           "cloud": "FoxESS Cloud (clé API)",
           "entity": "Utiliser mon onduleur foxess_modbus (aucune clé API requise)"
         }
+      },
+      "scheduler_diagnostics": {
+        "title": "Read-only scheduler capabilities",
+        "description": "Read saved user-disabled entry capabilities only. No entry creation, enable, update, recovery, polling or inverter writes.",
+        "data": { "entry_id": "Paused inverter" }
       },
       "cloud": {
         "title": "FoxESS Control",
@@ -329,9 +335,12 @@
       }
     },
     "abort": {
+      "no_paused_cloud_entry": "No eligible user-disabled cloud entry. No changes made.",
+      "scheduler_capabilities_read": "Read-only result; success=false means unsupported/failed. Entry stays disabled.\n\n```json\n{capabilities}\n```",
       "reconfigure_successful": "Web credentials updated successfully."
     },
     "error": {
+      "invalid_paused_entry": "Select an existing user-disabled cloud entry.",
       "cannot_connect": "Impossible de se connecter à l'API FoxESS Cloud. Vérifiez votre connexion réseau.",
       "invalid_auth": "Échec de l'authentification. Vérifiez votre clé API et le numéro de série de l'appareil.",
       "web_auth_failed": "Web portal login failed. Check your username and password.",

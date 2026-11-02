@@ -282,9 +282,15 @@
         "title": "FoxESS Control",
         "description": "Hoe is uw omvormer aangesloten?",
         "menu_options": {
+          "scheduler_diagnostics": "Read scheduler capabilities for a paused inverter (no controls)",
           "cloud": "FoxESS Cloud (API-sleutel)",
           "entity": "Mijn foxess_modbus-omvormer gebruiken (geen API-sleutel nodig)"
         }
+      },
+      "scheduler_diagnostics": {
+        "title": "Read-only scheduler capabilities",
+        "description": "Read saved user-disabled entry capabilities only. No entry creation, enable, update, recovery, polling or inverter writes.",
+        "data": { "entry_id": "Paused inverter" }
       },
       "cloud": {
         "title": "FoxESS Control",
@@ -333,9 +339,12 @@
       }
     },
     "abort": {
+      "no_paused_cloud_entry": "No eligible user-disabled cloud entry. No changes made.",
+      "scheduler_capabilities_read": "Read-only result; success=false means unsupported/failed. Entry stays disabled.\n\n```json\n{capabilities}\n```",
       "reconfigure_successful": "Web credentials updated successfully."
     },
     "error": {
+      "invalid_paused_entry": "Select an existing user-disabled cloud entry.",
       "cannot_connect": "Kan geen verbinding maken met de FoxESS Cloud API. Controleer uw netwerkverbinding.",
       "invalid_auth": "Authenticatie mislukt. Controleer uw API-sleutel en serienummer.",
       "web_auth_failed": "Web portal login failed. Check your username and password.",

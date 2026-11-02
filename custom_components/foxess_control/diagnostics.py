@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.diagnostics import async_redact_data
@@ -28,7 +29,7 @@ REDACT_KEYS = {
 }
 
 
-async def _scheduler_capabilities(
+async def async_read_scheduler_capabilities(
     hass: HomeAssistant, entry: ConfigEntry, inverter: Inverter | None
 ) -> dict[str, Any] | None:
     """Read constraints on explicit diagnostics download, even while paused.
@@ -43,7 +44,12 @@ async def _scheduler_capabilities(
         serial = entry.data.get(CONF_DEVICE_SERIAL)
         if not api_key or not serial:
             return {"success": False, "error": "CloudCredentialsUnavailable"}
-        inverter = Inverter(FoxESSClient(api_key), serial)
+        # Match runtime's existing isolated-simulator override, including when
+        # async_setup_entry has never run. No credentials go to a real API in CI.
+        inverter = Inverter(
+            FoxESSClient(api_key, base_url=os.environ.get("FOXESS_SIMULATOR_URL")),
+            serial,
+        )
     try:
         capabilities = await hass.async_add_executor_job(
             inverter.get_scheduler_capabilities
@@ -82,7 +88,7 @@ async def async_get_config_entry_diagnostics(
             {
                 "environment": {
                     "integration_version": _integration_version(),
-                    "scheduler_capabilities": await _scheduler_capabilities(
+                    "scheduler_capabilities": await async_read_scheduler_capabilities(
                         hass, entry, None
                     ),
                 }
@@ -127,7 +133,9 @@ async def async_get_config_entry_diagnostics(
         "plant_id_present": bool(getattr(domain_data, "plant_id", None)),
         "inverter_model": inverter.device_type if inverter else None,
         "max_power_w": inverter.max_power_w if inverter else None,
-        "scheduler_capabilities": await _scheduler_capabilities(hass, entry, inverter),
+        "scheduler_capabilities": await async_read_scheduler_capabilities(
+            hass, entry, inverter
+        ),
         "last_schedule_attempt": inverter.last_schedule_attempt if inverter else None,
         "data_source": (
             coordinator_data.get("data_source") if coordinator_data else None
