@@ -1,4 +1,48 @@
-# Fork release review: 1.0.24
+# Fork release review: 1.0.25
+
+**Status: prepared for review; no tag, publication or installation approval yet.**
+
+Installed baseline is v1.0.24, user-disabled across restart. Keep battery-charger
+`observe_only: true`, `exclusive_control: false`. Do not enable the entry merely
+to obtain diagnostics. H3 schedule payload compatibility remains unresolved.
+
+## v1.0.25 release gates
+
+- [x] PR #15 (cold-paused capability flow) and #16 (build-lock budget) merged.
+- [x] Full PR run #45 green: 41 HA passed / 27 intentional skips, including actual
+  cold-start config-flow routing with the original entry disabled. PR #43 also
+  passed. Main #44 failed shared image-build lock setup, not runtime assertions.
+- [ ] Merged runtime commit `aa59e4b3c3f9f1693ffa9d95ece04dd970774ac2` passes
+  [run #46](https://git.kernel32.de/utt/foxess-control/actions/runs/46).
+- [ ] Version/docs-only release PR reviewed/merged; exact release merge passes
+  fast metadata checks. Heavy jobs should skip, not run a duplicate simulation.
+- [ ] User approves exact release commit, new `v1.0.25` tag and
+  [draft GitHub Release text](RELEASE_v1.0.25.md).
+- [ ] Tag only the approved commit in Forgejo, verify identical GitHub mirror
+  tag/commit, then publish the GitHub Release separately and verify HACS availability.
+
+## v1.0.25 installation and read verification
+
+Installation needs separate approval and a fresh verified HA backup. Update only
+the existing HACS fork; preserve the original disabled entry, credentials/session
+storage and entity identities. Retain v1.0.24 code for rollback while disabled.
+Restart HA, verify installed version and `disabled_by: user` / `not_loaded`.
+
+Then explicitly approve the [read-only config-flow action](PAUSED_CAPABILITY_ACCESS.md):
+open FoxESS Control's Add integration flow, select the paused-entry scheduler
+diagnostics action and the existing entry, then confirm the read. Do not create a
+second entry or choose cloud setup. It must finish without entry creation/enabling
+or setup/recovery, using only the v3 capability read. Ordinary diagnostics may
+remain unavailable; this action is deliberately independent of domain setup.
+
+Unsupported/failed results are not guessed constraints. Inspect declared properties
+before proposing any payload correction. No re-enable, live control test, automatic
+HA update or upstream merge is authorized by release preparation/publication.
+Multi-hour soak and broader UI E2E remain unverified.
+
+---
+
+# Historical v1.0.24 release-review record
 
 **Subsequent installation evidence:** v1.0.24 was published, installed through
 HACS and restarted while the original entry stayed user-disabled. Ordinary

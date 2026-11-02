@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.0.25
+
+Release candidate; not published or installed. Based on fork v1.0.24.
 
 - Add an explicit read-only config-flow capability check for an existing
   user-disabled cloud entry, accessible even when HA has never loaded the domain.
@@ -9,10 +11,21 @@
   integration merely to expose it. See [access correction](docs/PAUSED_CAPABILITY_ACCESS.md).
 - Add a real-HA disabled-cold-start flow regression using the existing simulator,
   asserting exactly one read request and no setup, polling, recovery or writes.
+- Align the two-worker HA build-lock wait with its existing bounded build timeout;
+  log build duration and test timeout/failure lock release. No control assertions
+  or production write behavior are changed by this test-infrastructure fix.
+- Validation: PR run #43 and corrected-fixture PR run #45 passed full CI; #45
+  included 41 HA passes / 27 intentional skips and the cold-paused capability flow.
+  Post-merge main run #46 is pending at preparation. Publication requires green
+  main validation, exact-release metadata checks and separate approval.
+- This fixes safe read access, not H3 write compatibility or power enforcement.
+  Keep the affected entry disabled and battery-charger observe-only.
 
 ## 1.0.24
 
-Release candidate; not published or installed. Based on fork v1.0.23.
+Published and installed. Based on fork v1.0.23. Restart preserved the disabled
+entry, but ordinary diagnostics were unavailable after a disabled cold start.
+See the v1.0.25 access correction above. The notes below record release preparation.
 
 - Correct charge-only cleanup to disable and verify the scheduler master directly,
   without first sending a potentially rejected SelfUse schedule. Stored groups
