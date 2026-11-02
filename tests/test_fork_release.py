@@ -14,8 +14,8 @@ def test_fork_manifest_and_changelog_agree() -> None:
     )
     assert manifest["domain"] == "foxess_control"
     assert manifest["config_flow"] is True
-    assert manifest["version"] == "1.0.23"
-    assert AwesomeVersion(manifest["version"]) > AwesomeVersion("1.0.22")
+    assert manifest["version"] == "1.0.24"
+    assert AwesomeVersion(manifest["version"]) > AwesomeVersion("1.0.23")
     assert f"## {manifest['version']}\n" in (ROOT / "CHANGELOG.md").read_text()
     assert manifest["documentation"] == "https://github.com/McQueen2063/foxess-control"
     assert manifest["issue_tracker"].startswith(manifest["documentation"])

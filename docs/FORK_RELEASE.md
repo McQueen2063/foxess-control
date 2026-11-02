@@ -1,4 +1,51 @@
-# Fork release review: 1.0.23
+# Fork release review: 1.0.24
+
+**Status: prepared for review; not approved for tagging, publication or installation.**
+
+Published/installed baseline is v1.0.23. The installed FoxESS Control entry remains
+user-disabled. Battery-charger remains `observe_only: true`, `exclusive_control: false`.
+
+## v1.0.24 gates
+
+- [x] Containment/diagnostics PR #11 and deterministic WS test PR #12 merged.
+- [x] PR validation: run #35 passed; unchanged run #37 retry passed all jobs,
+  including HA 40 passed / 27 intentional skips, on a different runner from the
+  failed attempt. The first attempt had HA startup crashes, not assertion failures.
+- [ ] Merged runtime commit `823b21e2ef76d9a4c376738e73dc1ce6a5774fe6` passes
+  [run #38](https://git.kernel32.de/utt/foxess-control/actions/runs/38).
+- [ ] Version/docs-only release PR reviewed and merged; exact release commit
+  passes metadata/version checks. Skipped heavy jobs add no simulation evidence.
+- [ ] User approves exact release commit, new `v1.0.24` tag and
+  [draft Release text](RELEASE_v1.0.24.md). Do not move v1.0.23.
+- [ ] Tag in Forgejo, verify identical GitHub mirror tag/commit, then publish
+  GitHub Release separately and verify HACS availability. No automatic HA update.
+
+## v1.0.24 installation and diagnostic-only scope
+
+After separate installation approval, take/verify an HA backup, retain v1.0.23 as
+code rollback, and update the existing HACS fork without recreating the entry or
+changing entity identities. Keep the entry disabled across update/restart and
+verify installed version and disabled state. Do not enable it to obtain diagnostics:
+setup/recovery could write to the inverter even with battery-charger observe-only.
+
+With approval, request only the paused-entry capability diagnostics. They read
+`/op/v3/device/scheduler/get` without setup/recovery or scheduler writes. Inspect
+declared constraints before proposing H3 payload changes; absent properties are
+an explicit unsupported result, not permission to guess or probe writes.
+
+See [containment semantics and remaining limitations](CHARGE_WRITE_FAILURE.md).
+This release does not establish H3 payload compatibility or power-cap enforcement.
+Any re-enable or live-control test needs new explicit approval. Multi-hour soak
+and broader UI E2E remain unverified. If rolling back code, preserve the disabled
+entry: v1.0.23 retains the known failed-write/cleanup problem.
+
+---
+
+# Historical v1.0.23 release-review record
+
+v1.0.23 was published and installed; live start/cleanup subsequently failed with
+40257 and required vendor-app recovery. The checklist below is historical, not
+current installation guidance.
 
 **Status: prepared for review; publication and installation not yet approved.**
 
