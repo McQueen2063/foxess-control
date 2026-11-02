@@ -204,8 +204,14 @@
         "description": "How is your inverter connected?",
         "menu_options": {
           "cloud": "FoxESS Cloud (API key)",
-          "entity": "Use my foxess_modbus inverter (no API key needed)"
+          "entity": "Use my foxess_modbus inverter (no API key needed)",
+          "scheduler_diagnostics": "Read scheduler capabilities for a paused inverter (no controls)"
         }
+      },
+      "scheduler_diagnostics": {
+        "title": "Read-only scheduler capabilities",
+        "description": "Select an existing user-disabled cloud entry. Submitting makes only the v3 scheduler capability read using its saved credentials. No entry is created, enabled or updated; no recovery, polling or inverter writes run. The original entry stays paused.",
+        "data": { "entry_id": "Paused inverter" }
       },
       "cloud": {
         "title": "FoxESS Control",
@@ -261,10 +267,13 @@
       }
     },
     "abort": {
+      "no_paused_cloud_entry": "No eligible user-disabled cloud entry is available. No read or configuration change was made.",
+      "scheduler_capabilities_read": "Read-only capability result (success=false means unsupported or failed). No entry was created or enabled.\n\n```json\n{capabilities}\n```",
       "reconfigure_successful": "Web credentials updated successfully.",
       "reauth_successful": "API key updated successfully."
     },
     "error": {
+      "invalid_paused_entry": "Select an existing user-disabled cloud entry. It may have been enabled or removed since opening this form.",
       "cannot_connect": "Cannot connect to FoxESS Cloud API. Check your network connection.",
       "invalid_auth": "Authentication failed. Check your API key and device serial number.",
       "web_auth_failed": "Web portal login failed. Check your username and password.",

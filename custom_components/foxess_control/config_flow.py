@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import TYPE_CHECKING, Any
 
 import requests
 import voluptuous as vol
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import (
     ConfigEntry,
+    ConfigEntryDisabler,
+    ConfigEntryState,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
@@ -47,6 +51,7 @@ from .const import (
     WS_MODE_AUTO,
     WS_MODE_SMART_SESSIONS,
 )
+from .diagnostics import REDACT_KEYS, async_read_scheduler_capabilities
 from .foxess import FoxESSClient, FoxESSRealtimeWS, FoxESSWebSession, Inverter
 from .foxess.client import FoxESSApiError
 from .foxess.web_session import FoxESSWebAuthError, ensure_password_hash
@@ -123,20 +128,79 @@ class FoxessControlConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Entry point: route on foxess_modbus presence.
+        """Route setup normally, or offer an explicit paused-entry read.
 
         When a ``foxess_modbus`` config entry exists, offer a cloud/entity
-        menu; otherwise go straight to the cloud API-key step (today's
-        behaviour). HA routes a menu selection of ``"cloud"`` to
+        menu. A paused cloud entry also exposes read-only scheduler diagnostics;
+        otherwise go straight to the cloud API-key step. HA routes ``"cloud"`` to
         ``async_step_cloud`` and ``"entity"`` to ``async_step_entity`` by the
         step-name convention (data_entry_flow handles ``next_step_id``).
         """
-        if self.hass.config_entries.async_entries("foxess_modbus"):
+        paused = self._paused_cloud_entries()
+        if paused or self.hass.config_entries.async_entries("foxess_modbus"):
+            menu_options = ["cloud"]
+            if self.hass.config_entries.async_entries("foxess_modbus"):
+                menu_options.append("entity")
+            if paused:
+                menu_options.append("scheduler_diagnostics")
             return self.async_show_menu(
                 step_id="user",
-                menu_options=["cloud", "entity"],
+                menu_options=menu_options,
             )
         return await self.async_step_cloud()
+
+    def _paused_cloud_entries(self) -> dict[str, ConfigEntry]:
+        """Only explicitly user-disabled cloud entries may use this read path."""
+        return {
+            entry.entry_id: entry
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if entry.disabled_by == ConfigEntryDisabler.USER
+            and entry.state is ConfigEntryState.NOT_LOADED
+            and not entry.options.get(CONF_WORK_MODE_ENTITY)
+            and entry.data.get(CONF_API_KEY)
+            and entry.data.get(CONF_DEVICE_SERIAL)
+        }
+
+    async def async_step_scheduler_diagnostics(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Explicit read-only probe, even before the domain has ever loaded.
+
+        HA does not register diagnostics for a never-loaded disabled domain.
+        Config flows are independently accessible. This flow deliberately ends
+        without creating/updating an entry, setting up the domain, or recovery.
+        """
+        entries = self._paused_cloud_entries()
+        if not entries:
+            return self.async_abort(reason="no_paused_cloud_entry")
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            # Re-read eligibility on submission; a previously selected entry
+            # may have been enabled/deleted while the form was open.
+            entry = entries.get(user_input.get("entry_id", ""))
+            if entry is None:
+                errors["base"] = "invalid_paused_entry"
+            else:
+                result = await async_read_scheduler_capabilities(self.hass, entry, None)
+                return self.async_abort(
+                    reason="scheduler_capabilities_read",
+                    description_placeholders={
+                        "capabilities": json.dumps(
+                            async_redact_data(result, REDACT_KEYS), indent=2
+                        )
+                    },
+                )
+        return self.async_show_form(
+            step_id="scheduler_diagnostics",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("entry_id"): vol.In(
+                        {key: entry.title for key, entry in entries.items()}
+                    )
+                }
+            ),
+            errors=errors,
+        )
 
     async def async_step_cloud(
         self, user_input: dict[str, Any] | None = None

@@ -1,5 +1,12 @@
 # Fork release review: 1.0.24
 
+**Subsequent installation evidence:** v1.0.24 was published, installed through
+HACS and restarted while the original entry stayed user-disabled. Ordinary
+diagnostics were unavailable after that cold start: HA had not registered the
+never-loaded domain's handler. The paused-read instruction below was incomplete;
+see [observed gap and reviewed correction path](PAUSED_CAPABILITY_ACCESS.md).
+Do not enable the integration to work around it. The original review follows.
+
 **Status: prepared for review; not approved for tagging, publication or installation.**
 
 Published/installed baseline is v1.0.23. The installed FoxESS Control entry remains

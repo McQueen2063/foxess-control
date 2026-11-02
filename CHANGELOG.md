@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Add an explicit read-only config-flow capability check for an existing
+  user-disabled cloud entry, accessible even when HA has never loaded the domain.
+  It ends without creating, enabling or modifying an entry. v1.0.24's diagnostics
+  handler alone is unavailable after a disabled cold start; do not enable the
+  integration merely to expose it. See [access correction](docs/PAUSED_CAPABILITY_ACCESS.md).
+- Add a real-HA disabled-cold-start flow regression using the existing simulator,
+  asserting exactly one read request and no setup, polling, recovery or writes.
+
 ## 1.0.24
 
 Release candidate; not published or installed. Based on fork v1.0.23.

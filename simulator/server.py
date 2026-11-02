@@ -13,6 +13,7 @@ import hashlib
 import json
 import logging
 import time
+from collections import deque
 from typing import Any
 
 from aiohttp import WSMsgType, web
@@ -213,6 +214,17 @@ async def handle_scheduler_flag(request: web.Request) -> web.Response:
     if fault := _check_fault(request):
         return fault
     return _api_response({"enable": _model(request).schedule_enabled, "support": True})
+
+
+async def handle_scheduler_capabilities(request: web.Request) -> web.Response:
+    """Synthetic test properties, not a declaration of real H3 constraints."""
+    if sig_err := _check_signature(request):
+        return sig_err
+    if fault := _check_fault(request):
+        return fault
+    return _api_response(
+        {"properties": {"fdpwr": {"min": 0, "max": _model(request).max_power_w}}}
+    )
 
 
 async def handle_scheduler_set_flag(request: web.Request) -> web.Response:
@@ -421,6 +433,18 @@ async def handle_sim_state(request: web.Request) -> web.Response:
     return web.json_response(_model(request).to_dict())
 
 
+async def handle_sim_requests(request: web.Request) -> web.Response:
+    """Bounded path-only trace for proving cold diagnostics make no writes."""
+    return web.json_response(list(request.app["api_requests"]))
+
+
+@web.middleware
+async def trace_api_requests(request: web.Request, handler: Any) -> web.StreamResponse:
+    if not request.path.startswith("/sim/"):
+        request.app["api_requests"].append([request.method, request.path])
+    return await handler(request)
+
+
 async def handle_sim_set(request: web.Request) -> web.Response:
     body = await request.json()
     model = _model(request)
@@ -506,6 +530,7 @@ async def handle_sim_ws_stale(request: web.Request) -> web.Response:
 async def handle_sim_reset(request: web.Request) -> web.Response:
     _model(request).reset()
     request.app["rate_limit_times"].clear()
+    request.app["api_requests"].clear()
     return web.json_response({"ok": True})
 
 
@@ -515,7 +540,8 @@ async def handle_sim_reset(request: web.Request) -> web.Response:
 
 
 def create_app() -> web.Application:
-    app = web.Application()
+    app = web.Application(middlewares=[trace_api_requests])
+    app["api_requests"] = deque(maxlen=256)
     app["model"] = InverterModel()
     app["ws_clients"] = []
     app["rate_limit_times"] = {}  # endpoint -> last request monotonic time
@@ -525,6 +551,7 @@ def create_app() -> web.Application:
     app.router.add_get("/op/v0/device/detail", handle_device_detail)
     app.router.add_post("/op/v0/device/real/query", handle_real_query)
     app.router.add_post("/op/v0/device/scheduler/get", handle_scheduler_get)
+    app.router.add_post("/op/v3/device/scheduler/get", handle_scheduler_capabilities)
     app.router.add_post("/op/v0/device/setting/get", handle_base_work_mode)
     app.router.add_post("/op/v1/device/scheduler/get/flag", handle_scheduler_flag)
     app.router.add_post("/op/v1/device/scheduler/set/flag", handle_scheduler_set_flag)
@@ -544,6 +571,7 @@ def create_app() -> web.Application:
 
     # Backchannel
     app.router.add_get("/sim/state", handle_sim_state)
+    app.router.add_get("/sim/requests", handle_sim_requests)
     app.router.add_post("/sim/set", handle_sim_set)
     app.router.add_post("/sim/tick", handle_sim_tick)
     app.router.add_post("/sim/fast_forward", handle_sim_fast_forward)

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import contextlib
 import itertools
+import json
 import logging
 import os
 import shutil
@@ -522,6 +523,7 @@ def browser_context(
 
 @pytest.fixture
 def ha_e2e(
+    request: pytest.FixtureRequest,
     foxess_sim: SimulatorHandle | None,
     ha_port: int,
     connection_mode: str,
@@ -540,6 +542,18 @@ def ha_e2e(
 
     tmpdir = tempfile.mkdtemp(prefix="ha-e2e-")
     shutil.copytree(str(HA_CONFIG_SEED), tmpdir, dirs_exist_ok=True)
+
+    # Only the explicitly parametrized cold-start diagnostic regression uses
+    # this. Modify the disposable seed, never a running/production HA registry.
+    paused_entry = getattr(request, "param", None) == "paused_cloud"
+    if paused_entry:
+        assert connection_mode == "cloud"
+        entries_path = Path(tmpdir) / ".storage" / "core.config_entries"
+        entries = json.loads(entries_path.read_text())
+        for entry in entries["data"]["entries"]:
+            if entry["domain"] == "foxess_control":
+                entry["disabled_by"] = "user"
+        entries_path.write_text(json.dumps(entries))
 
     if connection_mode == "entity":
         entity_config = HA_CONFIG_SEED / "configuration.entity.yaml"
@@ -596,27 +610,17 @@ def ha_e2e(
         ha = HAClient(f"http://localhost:{ha_port}", E2E_TOKEN)
         ha.wait_ready(timeout_s=120)
 
-        deadline = time.monotonic() + 120
-        while time.monotonic() < deadline:
-            try:
-                ha.get_state("sensor.foxess_battery_soc")
-                break
-            except requests.RequestException:
-                time.sleep(2)
-        else:
-            # Capture container logs for diagnosis (stdout is DEVNULL).
-            try:
-                logs = subprocess.run(
-                    ["podman", "logs", "--tail", "200", name],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if logs.stdout:
-                    print(logs.stdout[-3000:])
-            except (subprocess.SubprocessError, OSError):
-                pass
-            raise TimeoutError("Integration entities not created within 120s")
+        if not paused_entry:
+            deadline = time.monotonic() + 120
+            while time.monotonic() < deadline:
+                try:
+                    ha.get_state("sensor.foxess_battery_soc")
+                    break
+                except requests.RequestException:
+                    time.sleep(2)
+            else:
+                # The common error path below captures logs before teardown.
+                raise TimeoutError("Integration entities not created within 120s")
         _log.warning(
             "[%s] container ready: %.1fs",
             wid,

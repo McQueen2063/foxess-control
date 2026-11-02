@@ -1,5 +1,10 @@
 # Charge-write failure: containment and correction
 
+**Paused cold-start diagnostic limitation:** v1.0.24 was subsequently installed
+and restarted while disabled. Its handler could not be reached because HA had
+not loaded the domain. See [safe read-access correction](PAUSED_CAPABILITY_ACCESS.md);
+do not enable the entry to make ordinary diagnostics available.
+
 ## Live evidence (2026-11-02, Europe/Berlin)
 
 Fork v1.0.23 on an H3-12.0-Smart was tested with separate user approval:
