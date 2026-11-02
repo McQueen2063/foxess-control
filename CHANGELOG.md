@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.0.24
+
+Release candidate; not published or installed. Based on fork v1.0.23.
 
 - Correct charge-only cleanup to disable and verify the scheduler master directly,
   without first sending a potentially rejected SelfUse schedule. Stored groups
@@ -10,13 +12,21 @@
 - Add explicit read-only scheduler capability diagnostics, including for paused
   entries. Unknown limits are not guessed and no alternate write payload is tried.
 - See [live failure evidence and remaining gates](docs/CHARGE_WRITE_FAILURE.md).
-  These changes are not installed and do not establish H3 write compatibility.
+   These changes are not installed and do not establish H3 write compatibility.
+
+- Make the deferred-to-active WebSocket lifecycle test deterministic using the
+  existing simulator telemetry; preserve initial deferral and WS assertions.
+- Validation: PR run #35 passed containment/diagnostics tests; PR #12 run #37
+  retry passed all jobs (HA: 40 passed, 27 intentional skips). Its first attempt
+  had three HA startup errors, including exit 139; the unchanged retry used a
+  different runner. This suggests an environment issue, not a proven bhyve cause.
+  Merged-main run #38 is still pending at preparation; see the release checklist.
 
 ## 1.0.23
 
 Published. Based on fork v1.0.22 (upstream v1.0.21). Subsequent H3 live testing
 rejected start and cleanup with 40257 and left scheduling enabled until manual
-recovery. See the unreleased correction above; simulation success is not live
+recovery. See the v1.0.24 correction above; simulation success is not live
 control validation.
 
 ### Added
