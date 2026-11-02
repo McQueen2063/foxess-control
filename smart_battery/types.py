@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime  # noqa: TC003 — used at runtime by factory functions
 import uuid
 from enum import StrEnum
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 
 class WorkMode(StrEnum):
@@ -34,6 +34,7 @@ class ScheduleGroup(TypedDict):
     minSocOnGrid: int
     fdSoc: int
     fdPwr: int
+    maxSoc: NotRequired[int]
 
 
 class MinSocSettings(TypedDict):

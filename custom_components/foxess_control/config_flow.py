@@ -40,6 +40,7 @@ from .const import (
     CONF_LOADS_POWER_ENTITY,
     CONF_MIN_SOC_ENTITY,
     CONF_PV_POWER_ENTITY,
+    CONF_SCHEDULER_API_VERSION,
     CONF_SOC_ENTITY,
     CONF_WEB_PASSWORD,
     CONF_WEB_USERNAME,
@@ -473,6 +474,16 @@ class FoxessControlOptionsFlow(OptionsFlow):
 
         schema = battery_options_schema(self._config_entry)
         schema = schema.extend(_additional_pv_schema_dict(self._config_entry.options))
+        schema = schema.extend(
+            {
+                vol.Optional(
+                    CONF_SCHEDULER_API_VERSION,
+                    default=self._config_entry.options.get(
+                        CONF_SCHEDULER_API_VERSION, "v0"
+                    ),
+                ): vol.In(["v0", "v1"])
+            }
+        )
         # Charge-only ceiling also applies to cloud mode; entity mappings and
         # the inverter's rated/discharge power remain unchanged.
         power_key = (

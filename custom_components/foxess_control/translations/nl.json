@@ -360,6 +360,7 @@
           "battery_capacity_kwh": "Batterijcapaciteit (kWh)",
           "min_power_change": "Minimale vermogenswijziging voor slim laden (W)",
           "api_min_soc": "Minimum API fdSoc (%) — ⚠️ Waarden onder 11 werken mogelijk niet met alle firmwareversies",
+          "scheduler_api_version": "Cloud scheduler API (v0 legacy; v1 flat maxSoc, opt-in)",
           "polling_interval": "API-polling-interval (seconden)",
           "additional_pv_power_variable": "Aanvullende zonne-energievariabele"
         },

@@ -1,5 +1,12 @@
 # Charge-write failure: containment and correction
 
+**Current state:** v1.0.25 is installed. After the successful read-only capability
+check, the user accepted startup recovery/cleanup risk and authorized re-enabling
+the original entry for telemetry. It loaded with SelfUse, scheduler disabled and
+Smart Operations idle. Leave it enabled for monitoring; battery-charger remains
+observe-only. See [payload comparison and candidate correction](H3_SCHEDULER_COMPARISON.md).
+The pause instructions below describe the earlier incident/recovery phase.
+
 **Paused cold-start diagnostic limitation:** v1.0.24 was subsequently installed
 and restarted while disabled. Its handler could not be reached because HA had
 not loaded the domain. See [safe read-access correction](PAUSED_CAPABILITY_ACCESS.md);
@@ -25,7 +32,7 @@ and [EVO #28](https://github.com/nicois/foxess-control/issues/28). They identify
 possible range/payload-version differences, not the rejected field on this device.
 No upstream code was automatically merged and no alternative payload was live-probed.
 
-## Correction under review (not installed)
+## Containment correction (installed in v1.0.24 and later)
 
 - Charge-only cleanup verifies the SelfUse base, directly disables the master
   using `/op/v1/device/scheduler/set/flag`, and independently reads back the flag.
@@ -49,7 +56,7 @@ No upstream code was automatically merged and no alternative payload was live-pr
   this record is in-memory and does not survive reload/restart.
 
 This is a containment/diagnostic fix, not an H3 payload compatibility claim.
-Write payloads and endpoint version remain unchanged until device capabilities
-have been inspected. Keep the installed integration paused and battery-charger
-observe-only. Review, full runtime CI, release/install approval and a new explicit
-live-test approval are required before further inverter writes.
+Installed v1.0.25 still uses the legacy schedule write payload/endpoint. The user
+accepted enabling it for telemetry, not a new charge test. Battery-charger stays
+observe-only. Review/CI/release/install gates apply to any compatibility correction;
+new control tests still require explicit approval.

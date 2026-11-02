@@ -133,6 +133,7 @@ async def async_get_config_entry_diagnostics(
         "plant_id_present": bool(getattr(domain_data, "plant_id", None)),
         "inverter_model": inverter.device_type if inverter else None,
         "max_power_w": inverter.max_power_w if inverter else None,
+        "scheduler_api_version": inverter.scheduler_api_version if inverter else None,
         "scheduler_capabilities": await async_read_scheduler_capabilities(
             hass, entry, inverter
         ),

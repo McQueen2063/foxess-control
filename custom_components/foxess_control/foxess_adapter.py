@@ -64,6 +64,7 @@ _MANAGED_WORK_MODES = frozenset(
 )
 
 _SCHEDULE_GROUP_KEYS = {
+    "maxSoc",
     "enable",
     "startHour",
     "startMinute",
