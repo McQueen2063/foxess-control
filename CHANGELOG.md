@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.0.26
+
+Release candidate; not published or installed. Based on fork v1.0.25.
 
 - Add an explicit cloud scheduler API option: keep legacy v0 by default, or opt
   into flat v1 read/write groups with missing `maxSoc` defaulting to 100. Preserve
@@ -9,6 +11,11 @@
 - [H3 payload comparison](docs/H3_SCHEDULER_COMPARISON.md) found no declared-range
   violation in reconstructed test groups. Deprecated v0 versus max-SoC-capable
   scheduling is a candidate cause, not proven H3 write/power-cap compatibility.
+- PR #18 full run #49 passed. Merged-main run #50 is pending at preparation;
+  it and exact-release metadata checks must pass before publication approval.
+  Existing simulator lifecycle validation exercises the unchanged default-v0
+  configuration; v1 payload/rollback behavior is covered by focused mocks, not
+  a live H3 write or a real-HA v1 lifecycle test.
 
 ## 1.0.25
 
