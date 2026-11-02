@@ -279,14 +279,23 @@ def _build_container_once() -> None:
     """Build the HA container image once, serialised across xdist workers."""
     import filelock
 
-    lock = filelock.FileLock(str(REPO_ROOT / ".e2e-build.lock"), timeout=300)
+    build_timeout_s = 600
+    # CI has two workers. The waiter must allow the holder its entire bounded
+    # cold-pull/build budget, plus time to release the lock. A 300s wait used to
+    # expire while a still-valid 600s build ran, caching setup errors in pytest.
+    lock = filelock.FileLock(
+        str(REPO_ROOT / ".e2e-build.lock"), timeout=build_timeout_s + 60
+    )
     with lock:
+        started = time.monotonic()
+        _log.warning("HA image build started (timeout %ss)", build_timeout_s)
         result = subprocess.run(
             ["podman", "build", "-t", CONTAINER_IMAGE, str(E2E_DIR)],
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=build_timeout_s,
         )
+        _log.warning("HA image build finished after %.1fs", time.monotonic() - started)
         if result.returncode:
             raise RuntimeError(
                 f"HA image build failed (exit {result.returncode}):\n"
